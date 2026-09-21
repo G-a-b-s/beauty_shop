@@ -68,7 +68,7 @@ redireciona para a tela inicial do perfil autenticado.
 | Hospedagem | GitHub Pages |
 
 O Firebase continua preparado na arquitetura para a próxima etapa, mas não é necessário para rodar
-o protótipo atual..
+o protótipo atual.
 
 ## Como rodar localmente
 
@@ -113,7 +113,6 @@ docs/                  Arquitetura, modelo, ADRs e requisitos
 
 | Arquivo | Conteúdo |
 |---|---|
-
 | [`METODOLOGIA.md`](METODOLOGIA.md) | Etapas do projeto e roadmap |
 | [`docs/modelo-dominio.md`](docs/modelo-dominio.md) | Entidades, requisitos e regras de negócio |
 | [`docs/arquitetura.md`](docs/arquitetura.md) | Arquitetura e organização do código |
