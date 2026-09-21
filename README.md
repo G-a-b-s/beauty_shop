@@ -115,8 +115,6 @@ Abre em `http://localhost:5173`.
 | Arquivo | Conteúdo |
 |---|---|
 | [`METODOLOGIA.md`](METODOLOGIA.md) | Como o projeto é conduzido e em que etapa está |
-| [`PUBLICAR.md`](PUBLICAR.md) | Passo a passo para publicar o protótipo no GitHub Pages |
-| [`Introducao.md`](Introducao.md) | Fundamentação e contexto do problema |
 | [`docs/modelo-dominio.md`](docs/modelo-dominio.md) | Entidades, requisitos e regras de negócio |
 | [`docs/arquitetura.md`](docs/arquitetura.md) | Camadas, estrutura de pastas e modelagem no Firestore |
 | [`docs/adr/`](docs/adr/) | Registro das decisões técnicas e suas justificativas |
