@@ -1,7 +1,6 @@
 # Modelo de Domínio
 
 > **FDD — Processo 1: Develop an Overall Model**
-> Fonte dos requisitos: `Introducao.md`
 > Status: rascunho para revisão
 > Multi-tenancy e contas de usuário: ver [ADR 0004](adr/0004-multi-tenancy-e-autenticacao.md) ·
 > [ADR 0007](adr/0007-profissional-como-conta.md) (profissional também é conta)
@@ -15,7 +14,7 @@ Tudo que vier depois — arquitetura, features, telas — deriva daqui.
 
 ---
 
-## 2. Requisitos extraídos da Introdução
+## 2. Requisitos extraídos
 
 Rastreabilidade: cada requisito aponta para o trecho que o originou.
 
@@ -225,7 +224,7 @@ explícito e não seja reaberto por engano no meio do desenvolvimento.
 | ~~P1~~ | ~~Salão único. Não há entidade `Salão` nem multi-tenant~~ | **Revisada pelo ADR 0004** — a plataforma passou a atender múltiplos empreendimentos |
 | ~~P2~~ | ~~Sem autenticação por perfil. Uso administrativo interno~~ | **Revisada pelo ADR 0004** — cliente e empreendimento autenticam via Firebase Auth |
 | ~~P3~~ | ~~Cliente não acessa o sistema. Quem agenda é o salão~~ | **Revisada pelo ADR 0004** — o cliente tem conta própria e agenda diretamente |
-| P4 | **Sem controle financeiro.** `preco` existe apenas como dado do serviço | Fora do escopo declarado na Introdução |
+| P4 | **Sem controle financeiro.** `preco` existe apenas como dado do serviço | Fora do escopo|
 | P5 | **Sem notificações** (e-mail, SMS, WhatsApp) | Dependência externa desnecessária ao objetivo |
 | ~~P6~~ | ~~Linguagem do domínio em português no código~~ | **Revisada pelo [ADR 0005](adr/0005-idioma-do-codigo.md)** — código em inglês, documentação e texto de tela continuam em português |
 | P7 | **Sem Custom Claims / Cloud Functions.** O tipo de conta (cliente/empreendimento) é resolvido lendo `usuarios/{uid}` no Firestore, não no token de autenticação | Evita reintroduzir backend — coerente com o ADR 0002. Ver ADR 0004 |

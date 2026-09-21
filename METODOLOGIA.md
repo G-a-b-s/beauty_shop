@@ -1,7 +1,7 @@
 # Metodologia do Projeto
 
 > **Documento vivo.** Serve de guia para saber em que etapa estamos e o que vem a seguir.
-> Última atualização: 2026-09-14
+> Última atualização: 2026-09-21
 
 ---
 
@@ -9,25 +9,29 @@
 
 **Etapa 1 — Modelo de Domínio e Arquitetura** ✅ concluída (revisada em 2026-09-18, ver
 [ADR 0004](docs/adr/0004-multi-tenancy-e-autenticacao.md) — projeto virou plataforma multi-tenant)
-**Etapa 2 — Walking Skeleton** ✅ concluída — projeto React, conexão com Firestore e
-cadastro/login (cliente e empreendimento) funcionando ponta a ponta
+**Etapa 2 — Walking Skeleton** ✅ concluída — projeto React e fluxo de autenticação mockada
+funcionando ponta a ponta para cliente, empreendimento e profissional
 **Etapa 3 — Fundação Visual Mínima** ✅ concluída — Tailwind configurado, `Button`/`Input`/`Card`
 em `src/shared/ui/`
-**Próximo passo:** Etapa 5 revisada por [ADR 0006](docs/adr/0006-prototipo-antes-de-integracao-de-dados.md)
-— construir as telas do protótipo (mockadas) antes de integrar cada uma ao Firestore
+**Etapa 5 — Passe 1: Protótipo** ✅ concluída — 12 telas mockadas, navegáveis e protegidas por
+perfil de conta
+**Publicação** ✅ concluída — protótipo publicado no GitHub Pages por GitHub Actions
+**Próximo passo:** Etapa 5, Passe 2 — substituir gradualmente os serviços mockados pela integração
+com o Firebase
 
-**Stack definida:** React + TypeScript + Vite · Tailwind CSS · Cloud Firestore · Firebase
-Authentication · hooks próprios
+**Stack atual:** React + TypeScript + Vite · Tailwind CSS · React Router · hooks próprios · dados e
+autenticação mockados
+**Integração planejada:** Cloud Firestore e Firebase Authentication
 
 ---
 
 ## 1. Visão geral
 
 Projeto: aplicativo web para **gestão de agendamentos e escala de profissionais em salões de beleza**
-(ver `Introducao.md` para a fundamentação).
 
-Stack prevista: **React** no front-end. Persistência (Firebase ou SQLite) ainda **não decidida** —
-será registrada como decisão formal na Etapa 1.
+Stack atual: **React + TypeScript + Vite** no front-end, com dados e autenticação mockados em
+memória. A persistência planejada é o **Cloud Firestore**, conforme [ADR 0002](docs/adr/0002-persistencia.md),
+e a autenticação real será feita com Firebase Authentication após a conclusão do protótipo.
 
 ---
 
@@ -70,7 +74,7 @@ Mantemos o essencial: **modelo primeiro, features pequenas, progresso medido por
 
 ### Etapa 1 — Modelo de Domínio e Arquitetura ✅ **concluída**
 
-- [x] Extrair requisitos da Introdução do protótipo
+- [x] Extrair requisitos do protótipo
 - [x] Modelar entidades do domínio (Cliente, Profissional, Serviço, Agendamento, Escala)
 - [x] Definir arquitetura e estrutura de pastas
 - [x] **ADR 0001** — registrar decisões arquiteturais
@@ -93,11 +97,10 @@ Mantemos o essencial: **modelo primeiro, features pequenas, progresso medido por
 Fatia mais fina possível atravessando **todas** as camadas, funcionando ponta a ponta.
 
 - [x] Projeto React inicializado
-- [x] Conexão com a camada de persistência
-- [x] Cadastro e login de conta (cliente e empreendimento) — Firebase Authentication
-      *(temporariamente desligado durante o protótipo, ver [ADR 0009](docs/adr/0009-autenticacao-mockada-no-prototipo.md))*
-- [x] Um CRUD mínimo completo (tela → dados → tela) — o cadastro de conta já é esse CRUD (cria e lê
-      de volta o documento em `customers`/`businesses`)
+- [x] Camada de serviços preparada para separar telas, regras e persistência
+- [x] Cadastro e login mockados para cliente e empreendimento, com conta profissional de demonstração
+  ([ADR 0009](docs/adr/0009-autenticacao-mockada-no-prototipo.md))
+- [x] Fluxo mínimo completo (tela → serviço mockado → tela) para validar a arquitetura do protótipo
 
 **Por quê:** arquitetura no papel mente. Uma fatia real prova que as peças conversam **antes**
 de construirmos features em cima de uma suposição errada.
@@ -120,11 +123,11 @@ as features** — cada feature que precisar de um componente novo o adiciona ao 
 
 ---
 
-### Etapa 4 — Feature List e Planejamento
+### Etapa 4 — Feature List e Planejamento ✅ **concluída para o protótipo**
 
-- [ ] Escrever a lista completa de features
-- [ ] Agrupar por área de negócio (*feature sets*)
-- [ ] Ordenar por dependência e risco
+- [x] Escrever a lista de telas e funcionalidades do protótipo
+- [x] Agrupar as funcionalidades por área de negócio (*feature sets*)
+- [x] Ordenar as entregas por dependência e risco
 
 **Áreas de negócio previstas:**
 
@@ -136,7 +139,8 @@ as features** — cada feature que precisar de um componente novo o adiciona ao 
 6. Agendamento ← núcleo do sistema
 7. Produtividade ← diferencial do trabalho
 
-**Entrega:** `docs/feature-list.md` (~17 features).
+**Entrega:** documentos `feat_prot01` a `feat_prot12` em `docs/features/prototype/` e documentos
+`feat_data00` a `feat_data12` em `docs/features/data/`.
 
 ---
 
@@ -160,19 +164,29 @@ descreve a troca do mock pela leitura/escrita real — só o arquivo em `service
       acesso por tipo de conta (cliente, empreendimento e profissional — [ADR 0007](docs/adr/0007-profissional-como-conta.md))
 - [x] Documentar cada tela em `docs/features/prototype/` — `feat_prot01` a `feat_prot12`
 - [x] Construir as telas do protótipo (mock) — `feat_prot01` a `feat_prot12`
+- [x] Publicar o protótipo no GitHub Pages por GitHub Actions ([ADR 0010](docs/adr/0010-github-pages-para-o-prototipo.md))
 - [x] Documentar a integração de cada tela em `docs/features/data/` — `feat_data00` a `feat_data12`,
       com o mapa de dependências em [`docs/features/data/README.md`](docs/features/data/README.md)
 - [ ] Construir a integração de cada tela
 
 **Áreas de negócio cobertas pelas telas** (mesmas da Etapa 4):
 
-- [ ] Área 1 — Contas e Autenticação *(já concluída na Etapa 2, com dado real desde o início)*
-- [ ] Área 2 — Gestão de Empreendimentos
-- [ ] Área 3 — Gestão de Profissionais
-- [ ] Área 4 — Gestão de Serviços
-- [ ] Área 5 — Escala e Disponibilidade
-- [ ] Área 6 — Agendamento
-- [ ] Área 7 — Produtividade
+- [x] Área 1 — Contas e Autenticação *(mockada no protótipo)*
+- [x] Área 2 — Gestão de Empreendimentos *(listagem e detalhes para o cliente)*
+- [x] Área 3 — Gestão de Profissionais
+- [x] Área 4 — Gestão de Serviços
+- [x] Área 5 — Escala e Disponibilidade
+- [x] Área 6 — Agendamento
+- [x] Área 7 — Produtividade
+
+### Publicação do protótipo ✅ **concluída**
+
+O protótipo está publicado em [`https://g-a-b-s.github.io/beauty_shop/`](https://g-a-b-s.github.io/beauty_shop/).
+O workflow em `.github/workflows/deploy.yml` executa a build e publica automaticamente a cada push
+na branch `main`. O passo a passo está em [`PUBLICAR.md`](PUBLICAR.md).
+
+O fallback `404.html` permite recarregar as rotas da SPA no GitHub Pages. Como os dados ainda são
+mockados em memória, alterações feitas durante a demonstração não são persistidas após recarregar.
 
 ---
 
@@ -220,9 +234,9 @@ vale **por pacote**:
 
 **Uma tela do protótipo (`feat_prot`) está pronta quando:**
 
-- [ ] Navega de ponta a ponta com dado mockado
-- [ ] Reflete a regra de acesso por tipo de conta (quando houver)
-- [ ] Componentes novos incorporados ao design system
+- [x] Navega de ponta a ponta com dado mockado
+- [x] Reflete a regra de acesso por tipo de conta (quando houver)
+- [x] Componentes novos incorporados ao design system
 
 **Uma integração de dados (`feat_data`) está pronta quando:**
 

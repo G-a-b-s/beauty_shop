@@ -9,7 +9,7 @@
 ## Objetivo
 
 Métricas de volume de atendimento e taxa de ocupação por profissional, no período escolhido —
-o "diferencial do trabalho" citado na `Introducao.md`.
+o "diferencial do trabalho".
 
 ## Regra de acesso
 

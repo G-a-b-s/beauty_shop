@@ -1,130 +1,131 @@
 # Beauty Shop
 
-Plataforma Web para Gestão Integrada de Agendamentos, Escalas e Produtividade de Profissionais em
-Salões de Beleza e Barbearias.
+Protótipo navegável de uma plataforma web para gestão de agendamentos, profissionais, serviços,
+escalas e produtividade em salões de beleza e barbearias.
 
-Projeto de estudo. É uma **SPA** (*single-page application*) em React, sem backend próprio — toda
-a lógica roda no front-end, com o Firebase como camada de dados e de autenticação. O objetivo é
-demonstrar o **fluxo** de uma plataforma multi-tenant de gestão de salões, não entregar um produto
-pronto para produção.
+É uma **SPA** (*single-page application*) em React. Nesta etapa, a autenticação e os dados são
+mockados no front-end para permitir a demonstração dos fluxos antes da integração com o Firebase.
+Não é um produto pronto para produção.
 
-A plataforma atende dois tipos de conta:
+## Demonstração
 
-- **Empreendimento** (salão/barbearia) — cadastra-se, gerencia seus profissionais, serviços e
-  agenda.
-- **Cliente** — cadastra-se uma vez e agenda em qualquer empreendimento cadastrado na plataforma.
+O protótipo é publicado no GitHub Pages:
 
----
+**https://g-a-b-s.github.io/beauty_shop/**
 
-## O que o sistema faz
+### Contas de demonstração
 
-- **Contas** — cadastro e login separados para empreendimento e para cliente (Firebase Auth)
-- **Agendamentos** — marcação de horários de clientes, com validação automática de conflito
-- **Escalas** — jornada semanal e folgas de cada profissional
-- **Disponibilidade** — cálculo dos horários livres a partir da escala e dos agendamentos
-- **Produtividade** — volume de atendimentos e taxa de ocupação por profissional
+Todas usam a senha `123456`:
 
-O problema de origem: pequenos salões que ainda usam agenda de papel ou planilha, sujeitos a
-agendamento duplicado e informação desatualizada.
+| E-mail | Perfil | Tela inicial |
+|---|---|---|
+| `cliente@demo.com` | Cliente | Empreendimentos |
+| `salao@demo.com` | Empreendimento | Profissionais |
+| `ana@demo.com` | Profissional | Minha agenda |
 
----
+Também é possível criar uma conta de cliente ou empreendimento pela tela de login. Como os dados
+do protótipo ficam em memória, contas, agendamentos e alterações feitas durante a demonstração
+voltam ao estado inicial quando a página é recarregada.
+
+## O que já está disponível
+
+### Cliente
+
+- Lista de empreendimentos ativos
+- Detalhes de um empreendimento
+- Consulta de serviços e profissionais
+- Novo agendamento com validação de disponibilidade e conflitos
+- Lista de próximos agendamentos e histórico
+- Edição dos próprios dados
+
+### Empreendimento
+
+- Cadastro, edição e listagem de profissionais
+- Cadastro e edição de serviços
+- Agenda dos agendamentos
+- Jornada semanal e folgas dos profissionais
+- Indicadores de produtividade e taxa de ocupação
+
+### Profissional
+
+- Minha agenda de atendimentos
+- Minha jornada semanal e folgas
+
+Os três perfis são protegidos por rotas próprias. Ao acessar uma rota incompatível, o sistema
+redireciona para a tela inicial do perfil autenticado.
 
 ## Stack
 
 | Camada | Tecnologia |
 |---|---|
-| Interface | React + TypeScript |
+| Interface | React 19 + TypeScript |
 | Build | Vite (SPA) |
 | Estilo | Tailwind CSS |
-| Dados | Firebase — Cloud Firestore |
-| Autenticação | Firebase Authentication |
-| Hospedagem | GitHub Pages (protótipo) · Firebase Hosting (previsto para o pacote 2) |
+| Navegação | React Router |
+| Dados atuais | Mock em memória |
+| Autenticação atual | Mock local |
+| Integração planejada | Firebase Authentication e Cloud Firestore |
+| Hospedagem | GitHub Pages |
 
-Sem servidor próprio: o React conversa diretamente com o Firestore.
+O Firebase continua preparado na arquitetura para a próxima etapa, mas não é necessário para rodar
+o protótipo atual..
 
----
-
-## Escopo
-
-Delimitações assumidas para manter o projeto enxuto:
-
-- Multi-tenant — vários empreendimentos, dados isolados entre eles ([ADR 0004](docs/adr/0004-multi-tenancy-e-autenticacao.md))
-- Autenticação simples (e-mail/senha) para as contas de cliente e de empreendimento
-- Sem módulo financeiro
-- Sem notificações (e-mail, SMS, WhatsApp)
-
-Como não há backend, as validações são de front-end — servem à consistência do fluxo, não à
-segurança.
-
----
-
-## Como rodar o projeto
+## Como rodar localmente
 
 ### Pré-requisitos
 
-- Node.js e npm instalados
+- Node.js 20 ou superior
+- npm
 
-### 1. Instalar as dependências
+### Instalar e iniciar
 
 ```bash
 npm install
-```
-
-### 2. Configurar as credenciais do Firebase
-
-Copie o arquivo de exemplo:
-
-```bash
-cp .env.example .env
-```
-
-Abra o `.env` e preencha com as credenciais do seu projeto Firebase (Console → **Project
-settings** → **General** → seção "Your apps"):
-
-```
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
-```
-
-O `.env` é local e nunca é versionado (está no `.gitignore`).
-
-### 3. Rodar em desenvolvimento
-
-```bash
 npm run dev
 ```
 
-Abre em `http://localhost:5173`.
+Abra `http://localhost:5173` no navegador.
 
 ### Outros comandos
 
 | Comando | O que faz |
 |---|---|
-| `npm run build` | Gera a build de produção em `dist/` |
+| `npm run build` | Executa a verificação TypeScript e gera a build em `dist/` |
 | `npm run preview` | Serve a build de produção localmente |
-| `npm run lint` | Roda o linter (oxlint) |
+| `npm run lint` | Executa o linter Oxlint |
 
----
+Não é necessário criar um arquivo `.env` para executar o protótipo atual. As variáveis de Firebase
+em [`.env.example`](.env.example) serão usadas quando a integração real for ativada.
+
+## Estrutura principal
+
+```text
+src/
+  app/                 Rotas e layout da aplicação
+  features/            Funcionalidades organizadas por domínio
+  shared/              Componentes, hooks e dados compartilhados
+public/                Ícones e arquivos estáticos
+docs/                  Arquitetura, modelo, ADRs e requisitos
+.github/workflows/     Publicação automática no GitHub Pages
+```
 
 ## Documentação
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`METODOLOGIA.md`](METODOLOGIA.md) | Como o projeto é conduzido e em que etapa está |
+
+| [`METODOLOGIA.md`](METODOLOGIA.md) | Etapas do projeto e roadmap |
 | [`docs/modelo-dominio.md`](docs/modelo-dominio.md) | Entidades, requisitos e regras de negócio |
-| [`docs/arquitetura.md`](docs/arquitetura.md) | Camadas, estrutura de pastas e modelagem no Firestore |
-| [`docs/adr/`](docs/adr/) | Registro das decisões técnicas e suas justificativas |
+| [`docs/arquitetura.md`](docs/arquitetura.md) | Arquitetura e organização do código |
+| [`docs/features/prototype/`](docs/features/prototype/) | Escopo das telas do protótipo |
+| [`docs/features/data/`](docs/features/data/) | Funcionalidades previstas para a integração de dados |
+| [`docs/adr/`](docs/adr/) | Decisões técnicas e suas justificativas |
 
 O desenvolvimento segue **FDD** (*Feature-Driven Development*) adaptado: modelo de domínio
 primeiro, depois entrega feature a feature.
 
----
-
 ## Status
 
-Em desenvolvimento — modelo de domínio e arquitetura definidos, implementação a iniciar.
-Acompanhe a etapa atual no topo do [`METODOLOGIA.md`](METODOLOGIA.md).
+**Protótipo navegável publicado.** As principais telas e fluxos dos perfis cliente,
+empreendimento e profissional estão implementados com dados mockados. A próxima etapa é substituir
+gradualmente os serviços mockados por persistência e autenticação reais.
