@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { isSameDay, toDateKey } from '../../../shared/lib/date'
+import { addDays, addMonths, isSameDay, startOfDay, startOfWeek } from '../../../shared/lib/date'
 import {
   listAppointmentsForBusiness,
   setAppointmentStatus,
 } from '../services/appointmentService'
 import type { Appointment, AppointmentStatus } from '../types'
 
+import type { ScheduleViewMode } from '../../../shared/ui/ScheduleView'
+
 export function useBusinessSchedule(businessId: string) {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedDateKey, setSelectedDateKey] = useState(toDateKey(new Date()))
+  const [view, setView] = useState<ScheduleViewMode>('day')
+  const [referenceDate, setReferenceDate] = useState(() => startOfDay(new Date()))
 
   useEffect(() => {
     listAppointmentsForBusiness(businessId).then((result) => {
@@ -18,18 +21,32 @@ export function useBusinessSchedule(businessId: string) {
     })
   }, [businessId])
 
-  const selectedDate = useMemo(() => {
-    const [year, month, day] = selectedDateKey.split('-').map(Number)
-    return new Date(year, month - 1, day)
-  }, [selectedDateKey])
+  const visibleDays = useMemo(() => {
+    if (view === 'day') return [referenceDate]
+    if (view === 'week') {
+      const weekStart = startOfWeek(referenceDate)
+      return Array.from({ length: 7 }, (_, index) => addDays(weekStart, index))
+    }
 
-  const dayAppointments = useMemo(
-    () =>
-      appointments
-        .filter((appointment) => isSameDay(new Date(appointment.start), selectedDate))
-        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()),
-    [appointments, selectedDate],
-  )
+    const monthStart = addMonths(referenceDate, 0)
+    const gridStart = startOfWeek(monthStart)
+    return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index))
+  }, [view, referenceDate])
+
+  const appointmentsByDay = useMemo(() => {
+    const map = new Map<string, Appointment[]>()
+
+    for (const day of visibleDays) {
+      map.set(
+        day.toDateString(),
+        appointments
+          .filter((appointment) => isSameDay(new Date(appointment.start), day))
+          .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()),
+      )
+    }
+
+    return map
+  }, [appointments, visibleDays])
 
   async function updateStatus(appointmentId: string, status: AppointmentStatus) {
     await setAppointmentStatus(appointmentId, status)
@@ -37,5 +54,33 @@ export function useBusinessSchedule(businessId: string) {
     setAppointments([...result])
   }
 
-  return { dayAppointments, loading, selectedDateKey, setSelectedDateKey, updateStatus }
+  function goToPrevious() {
+    setReferenceDate((current) =>
+      view === 'day' ? addDays(current, -1) : view === 'week' ? addDays(current, -7) : addMonths(current, -1),
+    )
+  }
+
+  function goToNext() {
+    setReferenceDate((current) =>
+      view === 'day' ? addDays(current, 1) : view === 'week' ? addDays(current, 7) : addMonths(current, 1),
+    )
+  }
+
+  function openDay(date: Date) {
+    setReferenceDate(startOfDay(date))
+    setView('day')
+  }
+
+  return {
+    loading,
+    view,
+    setView,
+    referenceDate,
+    visibleDays,
+    appointmentsByDay,
+    goToPrevious,
+    goToNext,
+    openDay,
+    updateStatus,
+  }
 }

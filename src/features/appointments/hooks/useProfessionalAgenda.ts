@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { addDays, addMonths, isSameDay, startOfDay, startOfWeek } from '../../../shared/lib/date'
+import type { ScheduleViewMode } from '../../../shared/ui/ScheduleView'
 import { listAppointmentsForProfessional } from '../services/appointmentService'
 import type { Appointment } from '../types'
-
-export type AgendaView = 'day' | 'week' | 'month'
 
 export function useProfessionalAgenda(professionalId: string) {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState<AgendaView>('day')
+  const [view, setView] = useState<ScheduleViewMode>('day')
   const [referenceDate, setReferenceDate] = useState(() => startOfDay(new Date()))
 
   useEffect(() => {
