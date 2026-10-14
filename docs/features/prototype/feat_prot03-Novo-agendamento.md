@@ -10,7 +10,7 @@
 ## Objetivo
 
 Fluxo de criação de um agendamento: escolher serviço → profissional → data/horário disponível →
-confirmar. É a tela que mais concentra regras de negócio do sistema (RN01 a RN09).
+confirmar. É a tela que mais concentra regras de negócio do sistema (RN01 a RN12).
 
 ## Regra de acesso
 
@@ -69,7 +69,7 @@ combinado com o cliente, não espelho. O mock já nasce com eles para o formato 
 quando a `feat_data03` ligar no Firestore.
 
 Mockar pelo menos um profissional com folga marcada e outro com agendamento já ocupando parte do
-dia, para o cálculo de horário livre (RF04) ter caso de borda real pra mostrar — não só um dia
+dia, para o cálculo de horário livre (RF07) ter caso de borda real pra mostrar — não só um dia
 totalmente vazio.
 
 ## Interações

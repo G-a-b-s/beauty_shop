@@ -71,7 +71,7 @@ isola o acesso a dado em `services/` (ver `docs/arquitetura.md`).
 | Consequência | Mitigação |
 |---|---|
 | **Suspende temporariamente a "Definição de pronto" original** (feature ponta a ponta) para as telas construídas no passe 1 | A definição de pronto passa a valer por **pacote**: uma tela do protótipo está pronta quando navega e reflete as regras de acesso; a integração está pronta quando o mock é substituído sem quebrar a tela |
-| **Risco de o protótipo "enganar"** — parecer pronto sem estar | Mockar dados realistas o bastante para expor os casos de borda das regras de negócio (RN01–RN09), não só o caminho feliz |
+| **Risco de o protótipo "enganar"** — parecer pronto sem estar | Mockar dados realistas o bastante para expor os casos de borda das regras de negócio (RN01–RN12), não só o caminho feliz |
 | **Trabalho duplicado se o contrato de dados do mock não bater com o Firestore depois** | O `service` mockado usa os mesmos tipos (`types.ts`) já definidos no modelo de domínio — a forma dos dados não muda entre os passes, só a origem |
 
 ---

@@ -20,7 +20,7 @@ profissional **nunca** vê agendamento de outro profissional, mesmo do mesmo emp
 ## Elementos de tela
 
 - Alternador de visão: **Dia** / **Semana** / **Mês**
-- **Dia:** lista de horários do dia, com cliente e serviço em cada agendamento
+- **Dia:** lista de horários do dia, com cliente, serviço e status em cada agendamento
 - **Semana:** grade de 7 colunas (uma por dia), cada uma com os agendamentos daquele dia
 - **Mês:** calendário mensal, com indicador de quantos agendamentos existem em cada dia (o clique
   num dia leva à visão Dia daquela data)
