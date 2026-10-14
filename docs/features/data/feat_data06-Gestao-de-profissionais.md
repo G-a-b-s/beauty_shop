@@ -31,7 +31,7 @@ Só `professionals/services/professionalService.ts`:
 A ordenação por nome fica no cliente (`localeCompare` com locale `pt-BR`): o Firestore ordena por
 bytes, o que coloca "Ãlvaro" fora de lugar em português.
 
-## Isolamento (RN09)
+## Isolamento (RNF04)
 
 O caminho da subcoleção já é escopado por `businessId`, e `businessId` vem do `uid` da sessão —
 não existe consulta capaz de alcançar profissional de outro empreendimento. O isolamento é

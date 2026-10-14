@@ -36,4 +36,4 @@ empreendimento logado.
 ## Fora de escopo (por enquanto)
 
 - Categorias de serviço
-- Duração variável por profissional (Q2 em aberto no modelo de domínio)
+- Duração variável por profissional (Q1 em aberto no modelo de domínio)

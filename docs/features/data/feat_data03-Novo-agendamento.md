@@ -51,7 +51,7 @@ bloqueia horário (RN07) trafega.
 
 ## Regras de negócio
 
-RN01 a RN09 continuam no `domain/`, validadas no cliente. Sem backend, isso é consistência de
+RN01 a RN12 continuam no `domain/`, validadas no cliente. Sem backend, isso é consistência de
 fluxo, não segurança (`docs/arquitetura.md`, seção 6) — a regra do Firestore não consegue verificar
 sobreposição de horário. **Risco conhecido e aceito no escopo do protótipo.**
 

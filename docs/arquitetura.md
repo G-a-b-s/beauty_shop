@@ -188,7 +188,7 @@ telas de agendamento, mas o histórico continua íntegro.
 
 ### Índices necessários
 
-Consultas que o Firestore exige índice composto, a criar na Etapa 2:
+Consultas que o Firestore exige índice composto, a criar no Passe 2 da Etapa 5:
 
 - `appointments` por `professionalId` + `start` — agenda de um profissional
 - `appointments` por `start` + `status` — agenda do dia e métricas do período
@@ -206,6 +206,9 @@ Consultas que o Firestore exige índice composto, a criar na Etapa 2:
 | RN07 status libera horário | `domain/` | `appointments/domain/conflict.ts` |
 | RN08 apenas ativos | `domain/` | `appointments/domain/validation.ts` |
 | RN09 mesmo empreendimento | `domain/` | `appointments/domain/validation.ts` |
+| RN10 duração positiva do serviço | `domain/` | `services-catalog/domain/validation.ts` |
+| RN11 profissional com ao menos um serviço | `domain/` | `professionals/domain/validation.ts` |
+| RN12 folga não pode estar no passado | `domain/` | `professionals/domain/validation.ts` |
 | Taxa de ocupação | `domain/` | `productivity/domain/metrics.ts` |
 
 **Todas as regras em `domain/`.** Nenhuma validação de negócio em componente ou em service. Essa
@@ -215,11 +218,12 @@ Consultas que o Firestore exige índice composto, a criar na Etapa 2:
 
 ## 6. Consequências assumidas
 
-- **Sem backend, o cliente é confiável.** Qualquer validação pode ser burlada por quem abrir o
-  console. Aceitável num protótipo de uso interno e administrativo (premissa P2 do modelo de
-  domínio), mas é uma limitação conhecida do desenho — não confundir validação de negócio com
-  segurança.
+- **Sem backend, a validação no cliente não é uma barreira de segurança.** Qualquer regra executada
+  apenas no navegador pode ser burlada por quem abrir o console. No protótipo, os dados são
+  fictícios e mantidos em memória; no sistema integrado, as regras de acesso e isolamento precisam
+  ser aplicadas também pelas regras de segurança do Firestore. Não confundir validação de negócio
+  com autorização.
 - **Regras de segurança do Firestore ganham peso maior com multi-tenancy.** Sem elas, nada
   impede um empreendimento autenticado de ler ou escrever na subcoleção de outro. Precisam ser
-  configuradas na Etapa 2 checando `request.auth.uid` contra o `{businessId}` do caminho.
+  configuradas no Passe 2 da Etapa 5, checando `request.auth.uid` contra o `{businessId}` do caminho.
 - **Sem atualização automática de tela** — consequência do ADR 0003.

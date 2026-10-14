@@ -14,7 +14,7 @@ acesso ao cadastro de um novo (`feat_prot07`).
 ## Regra de acesso
 
 Só empreendimento, e só os próprios profissionais (`businessId` da conta logada) — nunca lista
-profissional de outro empreendimento (RN09 / isolamento multi-tenant do ADR 0004).
+profissional de outro empreendimento (RNF04 / isolamento multi-tenant do ADR 0004).
 
 ## Elementos de tela
 
