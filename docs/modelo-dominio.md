@@ -14,23 +14,46 @@ Tudo que vier depois — arquitetura, features, telas — deriva daqui.
 
 ---
 
-## 2. Requisitos extraídos
+## 2. Requisitos do sistema
 
-Rastreabilidade: cada requisito aponta para o trecho que o originou.
+### 2.1 Requisitos funcionais
 
-| ID | Requisito | Origem no texto |
-|---|---|---|
-| RF01 | Marcar horários de atendimento para clientes | *"unifica a marcação de horários de clientes"* |
-| RF02 | Controlar a disponibilidade dos profissionais | *"controle de disponibilidade"* |
-| RF03 | Impedir conflitos de agenda | *"evitar conflitos de agenda"*, *"agendamentos duplicados"* |
-| RF04 | Exibir os horários livres de um profissional | *"otimizar os horários"* |
-| RF05 | Medir o volume de atendimentos por funcionário | *"mensuração do volume de atendimentos por funcionário"* |
-| RF06 | Apresentar métricas de produtividade da equipe | *"métricas precisas sobre o desempenho, a disponibilidade e a produtividade individual"* |
-| RF07 | Gerir a escala dos profissionais | *"gestão da escala"* |
+| ID | Requisito |
+|---|---|
+| RF01 | O sistema deve permitir que clientes e empreendimentos criem uma conta e iniciem e encerrem uma sessão. |
+| RF02 | O sistema deve permitir que profissionais iniciem uma sessão com credenciais criadas pelo empreendimento ao cadastrá-los. |
+| RF03 | O sistema deve apresentar a cada tipo de conta somente as operações correspondentes ao seu papel: cliente, empreendimento ou profissional. |
+| RF04 | O sistema deve permitir que o cliente consulte empreendimentos ativos e pesquise por nome ou cidade. |
+| RF05 | O sistema deve permitir que o cliente consulte os dados de um empreendimento e seus serviços e profissionais ativos. |
+| RF06 | O sistema deve permitir que o cliente escolha um serviço, um profissional habilitado para executá-lo, uma data e um horário disponível e confirme o agendamento. |
+| RF07 | O sistema deve calcular e apresentar os horários disponíveis de um profissional considerando a jornada, as folgas, os agendamentos que ocupam horário e a duração do serviço escolhido. |
+| RF08 | O sistema deve permitir que o cliente consulte seus agendamentos realizados em diferentes empreendimentos, separados entre próximos e histórico. |
+| RF09 | O sistema deve permitir que o cliente cancele um agendamento futuro ainda agendado. |
+| RF10 | O sistema deve permitir que o cliente consulte e atualize o próprio nome e telefone. |
+| RF11 | O sistema deve permitir que o empreendimento consulte os profissionais vinculados a ele, incluindo os inativos, e ative ou inative cada profissional. |
+| RF12 | O sistema deve permitir que o empreendimento cadastre e edite profissionais, associe a cada profissional os serviços que executa e defina sua jornada inicial. |
+| RF13 | O sistema deve permitir que o empreendimento consulte, cadastre e edite seus serviços, bem como ative ou inative cada serviço. |
+| RF14 | O sistema deve permitir que o empreendimento consulte a agenda diária consolidada de seus profissionais. |
+| RF15 | O sistema deve permitir que o empreendimento registre um agendamento como realizado, falta ou cancelado. |
+| RF16 | O sistema deve permitir que cada profissional consulte seus próprios agendamentos nas visões de dia, semana e mês, incluindo os diferentes status. |
+| RF17 | O sistema deve permitir que o profissional consulte e altere a própria jornada semanal. |
+| RF18 | O sistema deve permitir que o profissional cadastre e remova as próprias folgas. |
+| RF19 | O sistema deve apresentar, para cada profissional e período selecionado, a quantidade de atendimentos realizados e a taxa de ocupação. |
 
-**Requisito não-funcional implícito:** o público-alvo são *"pequenos negócios que ainda operam de
-forma analógica"*. Isso impõe **simplicidade de uso** como restrição de projeto — a ferramenta
-precisa ser mais fácil que a agenda de papel que ela substitui.
+### 2.2 Requisitos não funcionais
+
+| ID | Requisito |
+|---|---|
+| RNF01 | **Usabilidade:** os fluxos de agendamento, consulta de agenda e gestão devem ser diretos, usar os termos do domínio de forma consistente e apresentar confirmação ou erro após cada operação. |
+| RNF02 | **Idioma:** todos os textos apresentados na interface ao usuário devem estar em português do Brasil. |
+| RNF03 | **Controle de acesso:** o sistema deve exigir autenticação para operações protegidas e impedir que uma conta execute operações não autorizadas para seu tipo ou sobre dados de outro usuário. |
+| RNF04 | **Isolamento:** dados de profissionais, serviços e agendamentos de um empreendimento não devem ser consultáveis ou alteráveis por outro empreendimento. |
+| RNF05 | **Persistência:** alterações confirmadas em dados cadastrais, profissionais, serviços, jornadas, folgas e agendamentos devem continuar disponíveis após o encerramento e reinício da sessão. |
+
+Os requisitos funcionais descrevem serviços e comportamentos observáveis do sistema. Os requisitos
+não funcionais registram restrições de qualidade e proteção aplicáveis a esses serviços. Metas
+quantitativas de desempenho, disponibilidade e acessibilidade ainda não foram definidas e devem
+ser estabelecidas antes de serem tratadas como critérios de aceitação.
 
 ---
 
