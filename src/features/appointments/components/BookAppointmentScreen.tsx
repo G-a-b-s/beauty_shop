@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/hooks/useAuth'
-import { formatDateTimeLabel, formatDayLabel, formatTimeLabel } from '../../../shared/lib/date'
+import { formatDateTimeLabel, formatFullDateLabel, formatTimeLabel } from '../../../shared/lib/date'
+import { capitalizeFirst } from '../../../shared/lib/text'
 import { Button } from '../../../shared/ui/Button'
 import { Card } from '../../../shared/ui/Card'
+import { MonthCalendar } from '../../../shared/ui/MonthCalendar'
 import { useBookAppointment } from '../hooks/useBookAppointment'
 
 const optionStyles =
@@ -15,13 +17,19 @@ export function BookAppointmentScreen() {
   const navigate = useNavigate()
   const { account } = useAuth()
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const {
     loading,
     services,
     availableProfessionals,
-    availableDates,
     availableSlots,
+    visibleMonth,
+    canGoToPreviousMonth,
+    canGoToNextMonth,
+    goToPreviousMonth,
+    goToNextMonth,
+    isDateBookable,
     selectedService,
     selectedProfessional,
     selectedDate,
@@ -34,11 +42,22 @@ export function BookAppointmentScreen() {
   } = useBookAppointment(businessId, account?.uid ?? '', account?.name ?? '')
 
   async function handleConfirm() {
+    if (!selectedService || !selectedProfessional || !selectedSlot) {
+      return
+    }
+    const message =
+      `Agendamento confirmado: ${selectedService.name} com ${selectedProfessional.name}, ` +
+      formatDateTimeLabel(selectedSlot.start)
     setSubmitting(true)
-    const created = await confirm()
-    setSubmitting(false)
-    if (created) {
-      navigate('/appointments')
+    setError(null)
+    try {
+      if (await confirm()) {
+        navigate('/appointments', { state: { message } })
+      }
+    } catch (confirmError) {
+      setError((confirmError as Error).message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -102,26 +121,29 @@ export function BookAppointmentScreen() {
       {selectedProfessional && (
         <Card>
           <h2 className="text-sm font-medium text-neutral-700">3. Escolha a data e o horário</h2>
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            {availableDates.map((date) => (
-              <button
-                key={date.toISOString()}
-                type="button"
-                onClick={() => selectDate(date)}
-                className={`rounded-xl border px-3 py-2 text-sm transition-colors ${
-                  selectedDate && selectedDate.getTime() === date.getTime()
-                    ? selectedOptionStyles
-                    : 'border-neutral-200 text-neutral-700 hover:border-primary-300'
-                }`}
-              >
-                {formatDayLabel(date)}
-              </button>
-            ))}
+          <div className="mt-3">
+            <MonthCalendar
+              month={visibleMonth}
+              selectedDate={selectedDate}
+              canGoToPrevious={canGoToPreviousMonth}
+              canGoToNext={canGoToNextMonth}
+              goToPrevious={goToPreviousMonth}
+              goToNext={goToNextMonth}
+              isDayEnabled={isDateBookable}
+              onSelect={selectDate}
+            />
           </div>
 
           {selectedDate && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <p className="mt-4 text-sm font-medium text-neutral-700">
+              {capitalizeFirst(formatFullDateLabel(selectedDate))}
+            </p>
+          )}
+
+          {selectedDate && (
+            <div className="mt-2 flex flex-wrap gap-2">
               {availableSlots.length === 0 && (
                 <p className="text-sm text-neutral-500">
                   Nenhum horário livre nesta data

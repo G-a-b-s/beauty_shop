@@ -24,6 +24,16 @@ Só `services-catalog/services/serviceCatalogService.ts`:
 | `updateService` | `updateDoc` de nome, duração e preço |
 | `setServiceActive` | `updateDoc` em `{ active }` |
 
+### Ajustes fora de `services/`
+
+- `updateService` e `setServiceActive` ganham `businessId` como primeiro argumento (o documento
+  vive em `businesses/{businessId}/services`). O `useServiceCatalog` já o tinha e passa a enviá-lo;
+  também espera o id chegar antes de ler.
+- O conversor `toService` da `feat_data02` passa a ser exportado por `businessService.ts` e
+  reutilizado aqui (mesmo caso do `toProfessional` na `feat_data06`).
+- O formulário mostra o erro quando salvar falha e é remontado (`key`) ao trocar de serviço em
+  edição — antes, clicar em outro serviço com o formulário aberto mantinha os campos do anterior.
+
 Mesma relação da `feat_data06` com a `feat_data02`: a leitura pública (só ativos) é da
 `feat_data02`, esta é a do dono. Consultas diferentes sobre a mesma subcoleção.
 
@@ -41,7 +51,34 @@ que garante que ele não seja agendado enquanto inativo é o filtro da `feat_dat
 
 ## Regras de segurança
 
-Já coberto pela regra de `services` da `feat_data02` (`write` só se `uid == businessId`).
+A `feat_data02` só liberou a leitura de `services`. Esta feature acrescenta a escrita pelo dono,
+validando o conteúdo — inclusive a RN10, porque a regra de agendamento da `feat_data03` confia em
+`durationMinutes` para conferir o `end`:
+
+```
+function isValidService(data) {
+  return data.keys().hasOnly(['name', 'durationMinutes', 'price', 'active'])
+    && data.keys().hasAll(['name', 'durationMinutes', 'price', 'active'])
+    && data.name is string && data.name.size() > 0
+    && data.durationMinutes is int && data.durationMinutes > 0   // RN10
+    && data.price is number && data.price >= 0
+    && data.active is bool;
+}
+
+match /businesses/{businessId}/services/{serviceId} {
+  allow read: if request.auth != null;
+  allow create: if request.auth != null && request.auth.uid == businessId
+                && isValidService(request.resource.data)
+                && request.resource.data.active == true;
+  allow update: if request.auth != null && request.auth.uid == businessId
+                && isValidService(request.resource.data);
+  allow delete: if false;
+}
+```
+
+`durationMinutes is int` também barra duração fracionária: o SDK grava número inteiro do
+JavaScript como inteiro do Firestore. `delete` é negado porque a exclusão é lógica
+(`active: false`).
 
 ## Índices
 
@@ -49,11 +86,18 @@ Nenhum.
 
 ## Remoção do mock
 
-Nada a remover aqui: `mockServices` já sai na `feat_data02`.
+`mockServices` sai do `mockDb.ts`: o `serviceCatalogService` era o último consumidor. O tipo
+`Service` passa para `shared/types/service.ts`, porque é usado por várias features.
 
 ## Critério de pronto
 
-- [ ] Lista traz todos os serviços do empreendimento logado, ativos e inativos
-- [ ] Criar, editar e inativar persistem no Firestore
-- [ ] Serviço inativado some da tela do cliente (`feat_data02`) e do fluxo de agendamento
-- [ ] Duração aceita só inteiro positivo; preço aceita decimal
+- [x] Lista traz todos os serviços do empreendimento logado, ativos e inativos
+- [x] Criar, editar e inativar persistem no Firestore
+- [x] Serviço inativado some da tela do cliente (`feat_data02`) e do fluxo de agendamento
+- [x] Duração aceita só inteiro positivo; preço aceita decimal
+
+Verificado em 16/11/2026: tela via Playwright no Salão Tela (Barba criada com R$ 45,90, editada
+para 25 min e R$ 39,50, inativada; a Cliente Tela vê só o Corte nos detalhes e no agendamento) e
+script de regras com 14/14 verificações OK (duração fracionária/zero, preço negativo, nome vazio,
+criar inativo, campo extra e `delete` recusados; preço decimal aceito; outro empreendimento e
+cliente recusados).

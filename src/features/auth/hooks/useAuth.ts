@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react'
-import {
-  login,
-  logout,
-  signUp,
-  subscribeToAccount,
-  type SelfSignUpType,
-} from '../services/mockAuthService'
-import type { AuthenticatedAccount, LoginData, SignUpData } from '../types'
+import { login, logout, signUp, subscribeToAccount } from '../services/firebaseAuthService'
+import type { AuthenticatedAccount, LoginData, SelfSignUpType, SignUpData } from '../types'
 
 type Status = 'loading' | 'signedOut' | 'signedIn'
 

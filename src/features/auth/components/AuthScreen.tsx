@@ -3,7 +3,7 @@ import { Button } from '../../../shared/ui/Button'
 import { Card } from '../../../shared/ui/Card'
 import { Input } from '../../../shared/ui/Input'
 import { useAuth } from '../hooks/useAuth'
-import type { SelfSignUpType } from '../services/mockAuthService'
+import type { SelfSignUpType } from '../types'
 
 type Mode = 'login' | 'signup'
 
@@ -19,11 +19,6 @@ export function AuthScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
-
-  function fillDemo(demoEmail: string) {
-    setEmail(demoEmail)
-    setPassword('123456')
-  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -166,46 +161,6 @@ export function AuthScreen() {
             </Button>
           </form>
         </Card>
-
-        {mode === 'login' && (
-          <div className="mt-6 rounded-2xl border border-dashed border-neutral-200 p-4">
-            <p className="text-xs font-medium text-neutral-500">
-              Protótipo — contas de demonstração (senha: 123456)
-            </p>
-            <ul className="mt-2 grid gap-1 text-xs text-neutral-500">
-              <li>
-                <button
-                  type="button"
-                  className="text-primary-700 hover:underline"
-                  onClick={() => fillDemo('cliente@demo.com')}
-                >
-                  cliente@demo.com
-                </button>{' '}
-                — cliente
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="text-primary-700 hover:underline"
-                  onClick={() => fillDemo('salao@demo.com')}
-                >
-                  salao@demo.com
-                </button>{' '}
-                — empreendimento
-              </li>
-              <li>
-                <button
-                  type="button"
-                  className="text-primary-700 hover:underline"
-                  onClick={() => fillDemo('ana@demo.com')}
-                >
-                  ana@demo.com
-                </button>{' '}
-                — profissional
-              </li>
-            </ul>
-          </div>
-        )}
       </div>
     </div>
   )

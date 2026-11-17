@@ -15,7 +15,7 @@ function formatHours(minutes: number): string {
 
 export function ProductivityScreen() {
   const businessId = useCurrentBusinessId()
-  const { metrics, loading, periodDays, setPeriodDays } = useProductivity(businessId)
+  const { metrics, loading, error, periodDays, setPeriodDays } = useProductivity(businessId)
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -41,7 +41,9 @@ export function ProductivityScreen() {
       <div className="mt-6 grid gap-3">
         {loading && <p className="text-sm text-neutral-500">Carregando…</p>}
 
-        {!loading && metrics.length === 0 && (
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        {!loading && !error && metrics.length === 0 && (
           <p className="text-sm text-neutral-500">Nenhum profissional cadastrado</p>
         )}
 

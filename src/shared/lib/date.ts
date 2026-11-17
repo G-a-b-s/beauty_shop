@@ -50,6 +50,15 @@ export function addMonths(date: Date, months: number): Date {
   return result
 }
 
+export function getMonthGrid(date: Date): Date[] {
+  const gridStart = startOfWeek(startOfMonth(date))
+  return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index))
+}
+
+export function isSameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
+}
+
 export function daysInMonth(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
 }
@@ -60,10 +69,6 @@ export function formatMonthLabel(date: Date): string {
 
 export function formatFullDateLabel(date: Date): string {
   return date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
-}
-
-export function formatDayLabel(date: Date): string {
-  return date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
 }
 
 export function formatTimeLabel(date: Date): string {

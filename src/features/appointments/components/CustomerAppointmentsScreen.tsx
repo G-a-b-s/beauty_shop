@@ -1,16 +1,13 @@
+import { useLocation } from 'react-router-dom'
 import { formatDateTimeLabel } from '../../../shared/lib/date'
 import { Button } from '../../../shared/ui/Button'
 import { Card } from '../../../shared/ui/Card'
+import { useConfirm } from '../../../shared/ui/useConfirm'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { useCustomerAppointments } from '../hooks/useCustomerAppointments'
-import type { Appointment, AppointmentStatus } from '../types'
+import type { Appointment } from '../types'
+import { statusLabels } from './statusLabels'
 
-const statusLabels: Record<AppointmentStatus, string> = {
-  scheduled: 'Agendado',
-  completed: 'Realizado',
-  cancelled: 'Cancelado',
-  noShow: 'Falta',
-}
 
 function AppointmentCard({
   appointment,
@@ -44,10 +41,33 @@ function AppointmentCard({
 
 export function CustomerAppointmentsScreen() {
   const { account } = useAuth()
-  const { upcoming, history, loading, cancel } = useCustomerAppointments(
+  const { upcoming, history, loading, cancel, error, message } = useCustomerAppointments(
     account?.uid ?? '',
-    account?.name ?? '',
   )
+  const { confirm, dialog } = useConfirm()
+  const bookedMessage = (useLocation().state as { message?: string } | null)?.message
+
+  async function handleCancel(appointment: Appointment) {
+    const confirmed = await confirm({
+      title: 'Cancelar agendamento?',
+      description: (
+        <>
+          <p>
+            {appointment.serviceName} com {appointment.professionalName}
+          </p>
+          <p>
+            {appointment.businessName} · {formatDateTimeLabel(new Date(appointment.start))}
+          </p>
+          <p className="mt-2">O horário volta a ficar livre e o cancelamento não pode ser desfeito.</p>
+        </>
+      ),
+      confirmLabel: 'Cancelar agendamento',
+      tone: 'danger',
+    })
+    if (confirmed) {
+      await cancel(appointment.id)
+    }
+  }
 
   if (loading) {
     return <p className="text-sm text-neutral-500">Carregando…</p>
@@ -57,6 +77,10 @@ export function CustomerAppointmentsScreen() {
     <div className="mx-auto grid max-w-2xl gap-8">
       <section>
         <h1 className="text-xl font-semibold text-neutral-900">Próximos</h1>
+        {(message ?? bookedMessage) && (
+          <p className="mt-2 text-sm text-primary-700">{message ?? bookedMessage}</p>
+        )}
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         <div className="mt-3 grid gap-3">
           {upcoming.length === 0 && (
             <p className="text-sm text-neutral-500">Nenhum agendamento futuro</p>
@@ -65,7 +89,7 @@ export function CustomerAppointmentsScreen() {
             <AppointmentCard
               key={appointment.id}
               appointment={appointment}
-              onCancel={() => cancel(appointment.id)}
+              onCancel={() => handleCancel(appointment)}
             />
           ))}
         </div>
@@ -80,6 +104,7 @@ export function CustomerAppointmentsScreen() {
           ))}
         </div>
       </section>
+      {dialog}
     </div>
   )
 }

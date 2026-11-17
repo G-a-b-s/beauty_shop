@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { cancelAppointment, listAppointmentsForCustomer } from '../services/appointmentService'
+import { listAppointmentsForCustomer, setAppointmentStatus } from '../services/appointmentService'
 import type { Appointment } from '../types'
 
-export function useCustomerAppointments(customerId: string, customerName: string) {
+export function useCustomerAppointments(customerId: string) {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    listAppointmentsForCustomer(customerId, customerName).then((result) => {
+    listAppointmentsForCustomer(customerId).then((result) => {
       setAppointments([...result])
       setLoading(false)
     })
-  }, [customerId, customerName])
+  }, [customerId])
 
   const { upcoming, history } = useMemo(() => {
     const now = new Date()
@@ -33,10 +35,21 @@ export function useCustomerAppointments(customerId: string, customerName: string
   }, [appointments])
 
   async function cancel(appointmentId: string) {
-    await cancelAppointment(appointmentId)
-    const result = await listAppointmentsForCustomer(customerId, customerName)
+    const appointment = appointments.find((entry) => entry.id === appointmentId)
+    if (!appointment) {
+      return
+    }
+    setError(null)
+    setMessage(null)
+    try {
+      await setAppointmentStatus(appointment, 'cancelled')
+      setMessage(`Agendamento de ${appointment.serviceName} cancelado`)
+    } catch {
+      setError('Não foi possível cancelar. Tente novamente')
+    }
+    const result = await listAppointmentsForCustomer(customerId)
     setAppointments([...result])
   }
 
-  return { upcoming, history, loading, cancel }
+  return { upcoming, history, loading, cancel, error, message }
 }

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import type { AccountType, AuthenticatedAccount } from '../../features/auth/types'
 import { Button } from '../../shared/ui/Button'
+import { useConfirm } from '../../shared/ui/useConfirm'
 
 type NavItem = {
   to: string
@@ -33,6 +34,19 @@ type Props = {
 }
 
 export function AppLayout({ account, onSignOut, children }: Props) {
+  const { confirm, dialog } = useConfirm()
+
+  async function handleSignOut() {
+    const confirmed = await confirm({
+      title: 'Sair da conta?',
+      description: 'Para voltar, será preciso entrar de novo com e-mail e senha.',
+      confirmLabel: 'Sair',
+    })
+    if (confirmed) {
+      onSignOut()
+    }
+  }
+
   return (
     <div className="min-h-svh bg-primary-50/40">
       <header className="border-b border-neutral-100 bg-white">
@@ -42,7 +56,7 @@ export function AppLayout({ account, onSignOut, children }: Props) {
             <span className="hidden text-sm text-neutral-500 sm:inline">
               {account.name || account.email}
             </span>
-            <Button variant="secondary" onClick={onSignOut}>
+            <Button variant="secondary" onClick={handleSignOut}>
               Sair
             </Button>
           </div>
@@ -68,6 +82,7 @@ export function AppLayout({ account, onSignOut, children }: Props) {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      {dialog}
     </div>
   )
 }

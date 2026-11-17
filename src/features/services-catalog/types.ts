@@ -1,4 +1,4 @@
-export type { Service } from '../../shared/lib/mockDb'
+export type { Service } from '../../shared/types/service'
 
 export type ServiceDraft = {
   name: string

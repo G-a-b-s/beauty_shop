@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { formatFullDateLabel, formatMonthLabel, isSameDay } from '../lib/date'
+import { capitalizeFirst } from '../lib/text'
 import { Button } from './Button'
 
 export type ScheduleViewMode = 'day' | 'week' | 'month'
@@ -41,8 +42,9 @@ export function ScheduleView<Item>({
   renderDay,
   renderWeekItem,
 }: Props<Item>) {
-  const periodLabel =
-    view === 'month' ? formatMonthLabel(referenceDate) : formatFullDateLabel(referenceDate)
+  const periodLabel = capitalizeFirst(
+    view === 'month' ? formatMonthLabel(referenceDate) : formatFullDateLabel(referenceDate),
+  )
 
   return (
     <>
@@ -69,7 +71,7 @@ export function ScheduleView<Item>({
         </div>
       </div>
 
-      <p className="mt-4 text-sm font-medium capitalize text-neutral-700">{periodLabel}</p>
+      <p className="mt-4 text-sm font-medium text-neutral-700">{periodLabel}</p>
       {loading && <p className="mt-4 text-sm text-neutral-500">Carregando…</p>}
 
       {!loading && view === 'day' && (

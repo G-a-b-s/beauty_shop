@@ -1,7 +1,7 @@
 # ADR 0009 — Autenticação mockada durante o protótipo
 
 **Data:** 2026-09-18
-**Status:** Aceito
+**Status:** Encerrado — revertido na [`feat_data00`](../features/data/feat_data00-Autenticacao.md) em 2026-11-06, conforme a seção "Reversão"
 **Complementa:** [ADR 0006](0006-prototipo-antes-de-integracao-de-dados.md) (protótipo antes da integração)
 **Afeta temporariamente:** [ADR 0004](0004-multi-tenancy-e-autenticacao.md) e [ADR 0007](0007-profissional-como-conta.md)
 
@@ -98,6 +98,6 @@ problemas que ele existe para encontrar cedo.
 
 ## Reversão
 
-Em `feat_data01`, `useAuth` volta a importar de `firebaseAuthService` e as contas mockadas são
+Em [`feat_data00`](../features/data/feat_data00-Autenticacao.md), `useAuth` volta a importar de `firebaseAuthService` e as contas mockadas são
 descartadas. Os hooks `useCurrentBusinessId`/`useCurrentProfessionalId` **não mudam** — já leem a
 sessão, e o `uid` passará a ser o do Firebase.

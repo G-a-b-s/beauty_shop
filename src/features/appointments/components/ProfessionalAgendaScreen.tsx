@@ -3,9 +3,11 @@ import {
 } from '../../../shared/lib/date'
 import { ScheduleView } from '../../../shared/ui/ScheduleView'
 import { Card } from '../../../shared/ui/Card'
+import { useCurrentBusinessId } from '../../businesses/hooks/useCurrentBusinessId'
 import { useCurrentProfessionalId } from '../../professionals/hooks/useCurrentProfessionalId'
 import { useProfessionalAgenda } from '../hooks/useProfessionalAgenda'
 import type { Appointment } from '../types'
+import { statusLabels } from './statusLabels'
 
 function AppointmentLine({ appointment }: { appointment: Appointment }) {
   return (
@@ -18,6 +20,7 @@ function AppointmentLine({ appointment }: { appointment: Appointment }) {
 
 export function ProfessionalAgendaScreen() {
   const professionalId = useCurrentProfessionalId()
+  const businessId = useCurrentBusinessId()
   const {
     loading,
     view,
@@ -28,7 +31,7 @@ export function ProfessionalAgendaScreen() {
     goToPrevious,
     goToNext,
     openDay,
-  } = useProfessionalAgenda(professionalId)
+  } = useProfessionalAgenda(businessId, professionalId)
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -51,14 +54,19 @@ export function ProfessionalAgendaScreen() {
               <p className="text-sm text-neutral-500">Nenhum agendamento neste dia</p>
             )}
             {appointments.map((appointment) => (
-              <Card key={appointment.id} className="p-5">
-                <p className="font-medium text-neutral-900">
-                  {formatTimeLabel(new Date(appointment.start))} –{' '}
-                  {formatTimeLabel(new Date(appointment.end))}
-                </p>
-                <p className="text-sm text-neutral-500">
-                  {appointment.customerName} · {appointment.serviceName}
-                </p>
+              <Card key={appointment.id} className="flex items-start justify-between gap-4 p-5">
+                <div>
+                  <p className="font-medium text-neutral-900">
+                    {formatTimeLabel(new Date(appointment.start))} –{' '}
+                    {formatTimeLabel(new Date(appointment.end))}
+                  </p>
+                  <p className="text-sm text-neutral-500">
+                    {appointment.customerName} · {appointment.serviceName}
+                  </p>
+                </div>
+                <span className="whitespace-nowrap text-xs font-medium text-primary-700">
+                  {statusLabels[appointment.status]}
+                </span>
               </Card>
             ))}
           </div>

@@ -1,4 +1,6 @@
-export type { Appointment, AppointmentStatus, Shift, TimeOff } from '../../shared/lib/mockDb'
+export type { TimeOff } from '../../shared/types/timeOff'
+export type { Appointment, AppointmentStatus } from '../../shared/types/appointment'
+export type { Shift } from '../../shared/types/professional'
 
 export type NewAppointment = {
   businessId: string

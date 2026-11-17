@@ -1,10 +1,9 @@
-import { addMinutes, combineDateAndTime, isSameDay, toDateKey } from '../../../shared/lib/date'
-import type { Appointment, Shift, TimeOff, Weekday } from '../../../shared/lib/mockDb'
+import { addMinutes, combineDateAndTime, toDateKey } from '../../../shared/lib/date'
+import type { TimeOff } from '../../../shared/types/timeOff'
+import type { Shift, Weekday } from '../../../shared/types/professional'
+import { hasConflict, type TimeRange } from './conflict'
 
-export type TimeSlot = {
-  start: Date
-  end: Date
-}
+export type TimeSlot = TimeRange
 
 type AvailabilityInput = {
   date: Date
@@ -12,12 +11,12 @@ type AvailabilityInput = {
   durationMinutes: number
   shifts: Shift[]
   timeOff: TimeOff[]
-  appointments: Appointment[]
+  busySlots: TimeRange[]
   now: Date
 }
 
 export function getAvailableSlots(input: AvailabilityInput): TimeSlot[] {
-  const { date, professionalId, durationMinutes, shifts, timeOff, appointments, now } = input
+  const { date, professionalId, durationMinutes, shifts, timeOff, busySlots, now } = input
 
   const isDayOff = timeOff.some(
     (entry) => entry.professionalId === professionalId && entry.date === toDateKey(date),
@@ -34,33 +33,18 @@ export function getAvailableSlots(input: AvailabilityInput): TimeSlot[] {
   const shiftStart = combineDateAndTime(date, shift.startTime)
   const shiftEnd = combineDateAndTime(date, shift.endTime)
 
-  const blockingAppointments = appointments
-    .filter(
-      (appointment) =>
-        appointment.professionalId === professionalId && appointment.status === 'scheduled',
-    )
-    .map((appointment) => ({
-      start: new Date(appointment.start),
-      end: new Date(appointment.end),
-    }))
-    .filter((appointment) => isSameDay(appointment.start, date))
-
   const slots: TimeSlot[] = []
   let slotStart = shiftStart
 
   while (addMinutes(slotStart, durationMinutes) <= shiftEnd) {
-    const slotEnd = addMinutes(slotStart, durationMinutes)
+    const slot = { start: slotStart, end: addMinutes(slotStart, durationMinutes) }
+    const isInThePast = slot.start <= now
 
-    const overlapsAppointment = blockingAppointments.some(
-      (appointment) => slotStart < appointment.end && appointment.start < slotEnd,
-    )
-    const isInThePast = slotStart <= now
-
-    if (!overlapsAppointment && !isInThePast) {
-      slots.push({ start: slotStart, end: slotEnd })
+    if (!isInThePast && !hasConflict(slot, busySlots)) {
+      slots.push(slot)
     }
 
-    slotStart = addMinutes(slotStart, durationMinutes)
+    slotStart = slot.end
   }
 
   return slots

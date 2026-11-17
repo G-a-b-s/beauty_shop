@@ -32,6 +32,17 @@ export async function listProfessionalsForBusiness(businessId: string): Promise<
 
 O filtro de `active` sai do código e vira condição da consulta.
 
+Detalhes da implementação:
+
+- **Mapeamento explícito**, como na `feat_data01`. O `businessId` de serviços e profissionais vem
+  do **caminho**, porque os documentos das subcoleções não guardam esse campo
+  (`docs/arquitetura.md`). `serviceIds` e `shifts` caem em `[]` se faltarem.
+- **Ordenação por nome** no cliente, pelo mesmo motivo da `feat_data01`.
+- **Empreendimento inativo ou inexistente vira `undefined`.** Com a regra de leitura abaixo, o
+  Firestore responde `permission-denied` em vez de "não existe". O `getBusinessById` trata esse
+  código e devolve `undefined`, e a tela mostra "não encontrado". Sem isso, o erro subiria para o
+  hook, que não tem `catch`, e a tela ficaria travada em "Carregando…".
+
 > **Não confundir com as leituras do dono.** `feat_data06` e `feat_data08` implementam
 > `listProfessionalsByBusiness` e `listServicesByBusiness`, que trazem **também os inativos** para
 > as telas de gestão. São consultas diferentes sobre a mesma subcoleção, com públicos diferentes.
@@ -43,24 +54,40 @@ profissionais já traz as jornadas — nenhuma leitura extra. É isso que a `fea
 
 ## Regras de segurança
 
-Acrescenta a leitura pública das subcoleções:
+Acrescenta **só a leitura** das subcoleções, porque esta feature só lê:
 
 ```
 match /businesses/{businessId}/services/{serviceId} {
   allow read: if request.auth != null;
-  allow write: if request.auth.uid == businessId;
 }
 
 match /businesses/{businessId}/professionals/{professionalId} {
   allow read: if request.auth != null;
-  allow write: if request.auth.uid == businessId;
 }
 ```
 
-> **Este bloco de `professionals` é provisório.** A [`feat_data12`](feat_data12-Minha-jornada-e-folgas.md)
-> vai **substituí-lo**, desmembrando `write` em `create`/`update`/`delete` para o profissional
-> poder editar a própria jornada — e só ela. Não dá para complementar depois: como as regras são
-> somadas, este `write` continuaria concedendo o que a regra restritiva tenta barrar.
+A escrita entra nas features que escrevem, já com validação de conteúdo: `professionals` na
+[`feat_data06`](feat_data06-Gestao-de-profissionais.md#regras-de-segurança) (edição) e na
+[`feat_data07`](feat_data07-Cadastro-edicao-de-profissional.md#regras-de-segurança) (criação),
+`services` na [`feat_data08`](feat_data08-Gestao-de-servicos.md#regras-de-segurança), e a jornada
+editada pelo próprio profissional na [`feat_data12`](feat_data12-Minha-jornada-e-folgas.md#regras-de-segurança).
+Um `write` genérico do dono aqui anularia qualquer validação escrita depois, já que as regras são
+somadas.
+
+**Edita** também a leitura de `businesses` da base (`feat_data00`): só o empreendimento ativo é
+legível por qualquer conta autenticada; o inativo, só pelo dono.
+
+```
+match /businesses/{businessId} {
+  allow read: if request.auth != null
+              && (resource.data.active == true || request.auth.uid == businessId);
+  // create, update e delete continuam como na feat_data00
+}
+```
+
+A consulta da `feat_data01` segue permitida porque filtra por `active == true`: o Firestore só
+aceita uma consulta quando as condições dela garantem a regra. Uma listagem sem filtro passa a ser
+negada.
 
 ## Índices
 
@@ -68,11 +95,14 @@ Nenhum — consultas de campo único (`active`) dentro de uma subcoleção.
 
 ## Remoção do mock
 
-`mockServices` e `mockProfessionals` saem do `mockDb.ts`.
+Nada sai do `mockDb.ts` aqui: `mockBusinesses`, `mockServices` e `mockProfessionals` ainda têm
+consumidores em features seguintes (`createAppointment`, catálogo de serviços, gestão de
+profissionais). Ver o cronograma em [`README.md`](README.md#remoção-do-mock).
 
 ## Critério de pronto
 
-- [ ] Detalhes, serviços e profissionais vêm do Firestore
-- [ ] Inativos não aparecem
-- [ ] Empreendimento inexistente ou inativo cai no estado "não encontrado"
-- [ ] Botão "Agendar" leva ao fluxo da `feat_data03`
+- [x] Detalhes, serviços e profissionais vêm do Firestore
+- [x] Inativos não aparecem
+- [x] Empreendimento inexistente ou inativo cai no estado "não encontrado"
+- [x] Botão "Agendar" leva ao fluxo da `feat_data03` — a navegação não mudou; o fluxo em si é
+  verificado na `feat_data03`
