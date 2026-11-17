@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+# Demo database logins (fictitious accounts)
+CONTAS.md
 
 # Editor directories and files
 .vscode/*

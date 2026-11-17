@@ -1,7 +1,7 @@
 # ADR 0002 — Persistência: Firebase / Cloud Firestore
 
 **Data:** 2026-09-14
-**Status:** Aceito
+**Status:** Aceito — a escolha de hospedagem (Firebase Hosting) foi substituída pelo [ADR 0011](0011-github-pages-com-firebase.md); a do Firestore continua valendo
 
 ---
 

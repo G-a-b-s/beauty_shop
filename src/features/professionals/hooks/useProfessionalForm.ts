@@ -14,9 +14,12 @@ export function useProfessionalForm(businessId: string, professionalId: string |
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!businessId) {
+      return
+    }
     Promise.all([
       listServicesForBusiness(businessId),
-      professionalId ? getProfessionalById(professionalId) : Promise.resolve(undefined),
+      professionalId ? getProfessionalById(businessId, professionalId) : Promise.resolve(undefined),
     ]).then(([servicesResult, professionalResult]) => {
       setServices(servicesResult)
       setProfessional(professionalResult)
@@ -30,7 +33,7 @@ export function useProfessionalForm(businessId: string, professionalId: string |
 
   async function update(data: ProfessionalUpdate) {
     if (professionalId) {
-      await updateProfessional(professionalId, data)
+      await updateProfessional(businessId, professionalId, data)
     }
   }
 

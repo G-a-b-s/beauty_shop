@@ -1,7 +1,7 @@
 # ADR 0010 — GitHub Pages para hospedar o protótipo
 
 **Data:** 2026-09-19
-**Status:** Aceito
+**Status:** Aceito — estendido ao pacote 2 pelo [ADR 0011](0011-github-pages-com-firebase.md)
 **Escopo:** apenas o pacote 1 (protótipo). Não substitui o Firebase Hosting do [ADR 0002](0002-persistencia.md)
 
 ---
@@ -87,3 +87,6 @@ artefato de build versionado no repositório.
 
 Reavaliar ao iniciar o pacote 2 ([`feat_data00`](../features/data/feat_data00-Autenticacao.md)),
 quando a build passar a exigir as credenciais do Firebase.
+
+**Reavaliado em 2026-11-06:** o GitHub Pages continua, com a configuração do Firebase em secrets do
+Actions — ver [ADR 0011](0011-github-pages-com-firebase.md).

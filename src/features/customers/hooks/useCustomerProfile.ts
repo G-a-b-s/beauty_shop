@@ -1,23 +1,26 @@
 import { useEffect, useState } from 'react'
+import { refreshAccount } from '../../auth/services/firebaseAuthService'
 import { getCustomerProfile, updateCustomerProfile } from '../services/customerService'
 import type { Customer } from '../types'
 
-export function useCustomerProfile(customerId: string, accountName: string, accountEmail: string) {
+export function useCustomerProfile(customerId: string) {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getCustomerProfile(customerId, accountName, accountEmail).then((result) => {
-      setCustomer({ ...result })
+    if (!customerId) {
+      return
+    }
+    getCustomerProfile(customerId).then((result) => {
+      setCustomer(result ?? null)
       setLoading(false)
     })
-  }, [customerId, accountName, accountEmail])
+  }, [customerId])
 
   async function save(name: string, phone: string) {
-    const updated = await updateCustomerProfile(customerId, { name, phone })
-    if (updated) {
-      setCustomer({ ...updated })
-    }
+    await updateCustomerProfile(customerId, { name, phone })
+    setCustomer((current) => (current ? { ...current, name, phone } : current))
+    await refreshAccount()
   }
 
   return { customer, loading, save }

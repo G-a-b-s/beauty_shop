@@ -1,5 +1,7 @@
 import { addDays, combineDateAndTime, startOfDay, toDateKey } from '../../../shared/lib/date'
-import type { Appointment, Shift, TimeOff, Weekday } from '../../../shared/lib/mockDb'
+import type { TimeOff } from '../../../shared/types/timeOff'
+import type { Appointment } from '../../../shared/types/appointment'
+import type { Shift, Weekday } from '../../../shared/types/professional'
 
 export type ProductivityMetrics = {
   completedCount: number

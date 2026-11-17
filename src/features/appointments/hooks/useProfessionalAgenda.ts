@@ -1,21 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { addDays, addMonths, isSameDay, startOfDay, startOfWeek } from '../../../shared/lib/date'
+import { addDays, addMonths, getMonthGrid, isSameDay, startOfDay, startOfWeek } from '../../../shared/lib/date'
 import type { ScheduleViewMode } from '../../../shared/ui/ScheduleView'
 import { listAppointmentsForProfessional } from '../services/appointmentService'
 import type { Appointment } from '../types'
 
-export function useProfessionalAgenda(professionalId: string) {
+export function useProfessionalAgenda(businessId: string, professionalId: string) {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<ScheduleViewMode>('day')
   const [referenceDate, setReferenceDate] = useState(() => startOfDay(new Date()))
-
-  useEffect(() => {
-    listAppointmentsForProfessional(professionalId).then((result) => {
-      setAppointments([...result])
-      setLoading(false)
-    })
-  }, [professionalId])
 
   const visibleDays = useMemo(() => {
     if (view === 'day') {
@@ -26,10 +19,32 @@ export function useProfessionalAgenda(professionalId: string) {
       return Array.from({ length: 7 }, (_, index) => addDays(weekStart, index))
     }
 
-    const monthStart = addMonths(referenceDate, 0)
-    const gridStart = startOfWeek(monthStart)
-    return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index))
+    return getMonthGrid(referenceDate)
   }, [view, referenceDate])
+
+  const rangeStart = visibleDays[0].getTime()
+  const rangeEnd = addDays(visibleDays[visibleDays.length - 1], 1).getTime()
+
+  useEffect(() => {
+    if (!businessId || !professionalId) {
+      return
+    }
+    let ignore = false
+    listAppointmentsForProfessional(
+      businessId,
+      professionalId,
+      new Date(rangeStart),
+      new Date(rangeEnd),
+    ).then((result) => {
+      if (!ignore) {
+        setAppointments(result)
+        setLoading(false)
+      }
+    })
+    return () => {
+      ignore = true
+    }
+  }, [businessId, professionalId, rangeStart, rangeEnd])
 
   const appointmentsByDay = useMemo(() => {
     const map = new Map<string, Appointment[]>()

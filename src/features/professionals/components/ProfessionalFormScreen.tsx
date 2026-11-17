@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../../../shared/ui/Button'
 import { Card } from '../../../shared/ui/Card'
+import { FormProblems } from '../../../shared/ui/FormProblems'
+import { useConfirm } from '../../../shared/ui/useConfirm'
 import { Input } from '../../../shared/ui/Input'
 import { useCurrentBusinessId } from '../../businesses/hooks/useCurrentBusinessId'
 import type { Service } from '../../services-catalog/types'
@@ -31,6 +33,15 @@ function ProfessionalForm({ services, professional, onSubmit }: FormProps) {
   const [serviceIds, setServiceIds] = useState<string[]>(professional?.serviceIds ?? [])
   const [shifts, setShifts] = useState<Shift[]>(professional?.shifts ?? [])
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { confirm, dialog } = useConfirm()
+
+  const problems = [
+    name.trim().length === 0 && 'informe o nome do profissional',
+    services.length > 0 &&
+      serviceIds.length === 0 &&
+      'marque ao menos um serviço que o profissional executa (RN11)',
+  ].filter((problem): problem is string => Boolean(problem))
 
   function toggleService(serviceId: string, checked: boolean) {
     setServiceIds((current) =>
@@ -40,82 +51,114 @@ function ProfessionalForm({ services, professional, onSubmit }: FormProps) {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+    if (!isEditing) {
+      const confirmed = await confirm({
+        title: `Cadastrar ${name.trim()}?`,
+        description: (
+          <>
+            <p>
+              Será criado um login de profissional com o e-mail <strong>{email.trim()}</strong> e a
+              senha informada.
+            </p>
+            <p className="mt-2">
+              Confira o e-mail: ele não pode ser alterado depois. O profissional pode ser
+              inativado, mas não excluído.
+            </p>
+          </>
+        ),
+        confirmLabel: 'Cadastrar',
+      })
+      if (!confirmed) {
+        return
+      }
+    }
     setSubmitting(true)
-    await onSubmit({ name: name.trim(), phone, email, password, serviceIds, shifts })
-    setSubmitting(false)
+    setError(null)
+    try {
+      await onSubmit({ name: name.trim(), phone, email, password, serviceIds, shifts })
+    } catch (submitError) {
+      setError((submitError as Error).message)
+      setSubmitting(false)
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-6">
-      <Card>
-        <h2 className="text-sm font-medium text-neutral-700">Dados pessoais</h2>
-        <div className="mt-3 grid gap-4">
-          <Input label="Nome" value={name} onChange={(e) => setName(e.target.value)} required />
-          <Input label="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </div>
-      </Card>
-
-      {!isEditing && (
+    <>
+      <form onSubmit={handleSubmit} className="grid gap-6">
         <Card>
-          <h2 className="text-sm font-medium text-neutral-700">Acesso do profissional</h2>
+          <h2 className="text-sm font-medium text-neutral-700">Dados pessoais</h2>
           <div className="mt-3 grid gap-4">
-            <Input
-              label="E-mail de login"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              label="Senha inicial"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-            />
+            <Input label="Nome" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input label="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
         </Card>
-      )}
 
-      <Card>
-        <h2 className="text-sm font-medium text-neutral-700">Serviços que executa</h2>
-        <div className="mt-3 grid gap-2">
-          {services.length === 0 && (
-            <p className="text-sm text-neutral-500">
-              Cadastre um serviço antes de cadastrar profissionais
-            </p>
-          )}
-          {services.map((service) => (
-            <label key={service.id} className="flex items-center gap-2 text-sm text-neutral-700">
-              <input
-                type="checkbox"
-                checked={serviceIds.includes(service.id)}
-                onChange={(e) => toggleService(service.id, e.target.checked)}
-                className="size-4 rounded border-neutral-300 accent-primary-600"
+        {!isEditing && (
+          <Card>
+            <h2 className="text-sm font-medium text-neutral-700">Acesso do profissional</h2>
+            <div className="mt-3 grid gap-4">
+              <Input
+                label="E-mail de login"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
-              {service.name}
-              <span className="text-neutral-400">{service.durationMinutes} min</span>
-            </label>
-          ))}
-        </div>
-      </Card>
+              <Input
+                label="Senha inicial"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={6}
+                required
+              />
+            </div>
+          </Card>
+        )}
 
-      <Card>
-        <h2 className="text-sm font-medium text-neutral-700">Jornada semanal</h2>
-        <div className="mt-3">
-          <WeeklyShiftEditor shifts={shifts} onChange={setShifts} />
-        </div>
-      </Card>
+        <Card>
+          <h2 className="text-sm font-medium text-neutral-700">Serviços que executa</h2>
+          <div className="mt-3 grid gap-2">
+            {services.length === 0 && (
+              <p className="text-sm text-neutral-500">
+                Cadastre um serviço antes de cadastrar profissionais
+              </p>
+            )}
+            {services.map((service) => (
+              <label key={service.id} className="flex items-center gap-2 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={serviceIds.includes(service.id)}
+                  onChange={(e) => toggleService(service.id, e.target.checked)}
+                  className="size-4 rounded border-neutral-300 accent-primary-600"
+                />
+                {service.name}
+                <span className="text-neutral-400">{service.durationMinutes} min</span>
+              </label>
+            ))}
+          </div>
+        </Card>
 
-      <Button
-        type="submit"
-        disabled={submitting || name.trim().length === 0 || serviceIds.length === 0}
-        className="w-full"
-      >
-        {submitting ? 'Salvando…' : 'Salvar'}
-      </Button>
-    </form>
+        <Card>
+          <h2 className="text-sm font-medium text-neutral-700">Jornada semanal</h2>
+          <div className="mt-3">
+            <WeeklyShiftEditor shifts={shifts} onChange={setShifts} />
+          </div>
+        </Card>
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {problems.length > 0 && <FormProblems problems={problems} />}
+
+        <Button
+          type="submit"
+          disabled={submitting || problems.length > 0 || serviceIds.length === 0}
+          className="w-full"
+        >
+          {submitting ? 'Salvando…' : 'Salvar'}
+        </Button>
+      </form>
+      {dialog}
+    </>
   )
 }
 
@@ -157,7 +200,13 @@ export function ProfessionalFormScreen() {
             } else {
               await create(data)
             }
-            navigate('/professionals')
+            navigate('/professionals', {
+              state: {
+                message: professional
+                  ? `Dados de ${data.name} atualizados`
+                  : `${data.name} cadastrado. O login é ${data.email.trim()}`,
+              },
+            })
           }}
         />
       </div>

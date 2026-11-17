@@ -1,0 +1,195 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isValidProfessional(data) {
+      return data.keys().hasOnly(['name', 'phone', 'serviceIds', 'shifts', 'active'])
+        && data.keys().hasAll(['name', 'phone', 'serviceIds', 'shifts', 'active'])
+        && data.name is string && data.name.size() > 0
+        && data.phone is string
+        && data.serviceIds is list && data.serviceIds.size() > 0
+        && data.shifts is list && data.shifts.size() <= 7
+        && data.active is bool;
+    }
+
+    function isValidService(data) {
+      return data.keys().hasOnly(['name', 'durationMinutes', 'price', 'active'])
+        && data.keys().hasAll(['name', 'durationMinutes', 'price', 'active'])
+        && data.name is string && data.name.size() > 0
+        && data.durationMinutes is int && data.durationMinutes > 0
+        && data.price is number && data.price >= 0
+        && data.active is bool;
+    }
+
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && (
+
+                      (request.auth.uid == uid
+                        && request.resource.data.keys().hasOnly(['type'])
+                        && request.resource.data.type in ['customer', 'business'])
+                      || (request.resource.data.keys().hasOnly(['type', 'businessId'])
+                        && request.resource.data.type == 'professional'
+                        && request.resource.data.businessId == request.auth.uid
+                        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.type == 'business'
+                        && existsAfter(/databases/$(database)/documents/businesses/$(request.auth.uid)/professionals/$(uid)))
+                    );
+      allow update, delete: if false;
+    }
+
+    match /customers/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.keys().hasOnly(['name', 'phone', 'cpf'])
+                    && request.resource.data.keys().hasAll(['name', 'phone', 'cpf']);
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['name', 'phone']);
+      allow delete: if false;
+    }
+
+    match /businesses/{businessId} {
+      allow read: if request.auth != null
+                  && (resource.data.active == true || request.auth.uid == businessId);
+      allow create: if request.auth != null && request.auth.uid == businessId
+                    && request.resource.data.keys()
+                         .hasOnly(['name', 'phone', 'cnpj', 'address', 'city', 'active'])
+                    && request.resource.data.keys()
+                         .hasAll(['name', 'phone', 'cnpj', 'address', 'city', 'active'])
+                    && request.resource.data.active == true;
+      allow update: if request.auth != null && request.auth.uid == businessId;
+      allow delete: if false;
+    }
+
+    match /businesses/{businessId}/services/{serviceId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == businessId
+                    && isValidService(request.resource.data)
+                    && request.resource.data.active == true;
+      allow update: if request.auth != null && request.auth.uid == businessId
+                    && isValidService(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /businesses/{businessId}/professionals/{professionalId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == businessId
+                    && isValidProfessional(request.resource.data)
+                    && request.resource.data.active == true;
+      allow update: if request.auth != null && request.auth.uid == businessId
+                    && isValidProfessional(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == professionalId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shifts'])
+                    && request.resource.data.shifts is list
+                    && request.resource.data.shifts.size() <= 7;
+      allow delete: if false;
+    }
+
+    match /businesses/{businessId}/professionals/{professionalId}/timeOff/{timeOffId} {
+      function canManage() {
+        return request.auth != null
+          && (request.auth.uid == businessId || request.auth.uid == professionalId);
+      }
+
+      allow read: if request.auth != null;
+      allow create: if canManage()
+                    && request.resource.data.keys().hasAll(['date'])
+                    && request.resource.data.keys().hasOnly(['date', 'reason'])
+                    && request.resource.data.date is string
+                    && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+                    && (!('reason' in request.resource.data)
+                        || (request.resource.data.reason is string
+                            && request.resource.data.reason.size() <= 200));
+      allow update: if false;
+      allow delete: if canManage();
+    }
+
+    match /businesses/{businessId}/professionals/{professionalId}/busySlots/{slotId} {
+      function isValidNewBusySlot(data) {
+        let appointment = getAfter(/databases/$(database)/documents/businesses/$(businessId)/appointments/$(data.appointmentId)).data;
+
+        return data.keys().hasOnly(['appointmentId', 'start', 'end'])
+          && data.keys().hasAll(['appointmentId', 'start', 'end'])
+          && data.start is timestamp
+          && slotId == string(data.start.toMillis())
+          && appointment.customerId == request.auth.uid
+          && appointment.professionalId == professionalId
+          && appointment.status == 'scheduled'
+          && appointment.start == data.start
+          && appointment.end == data.end;
+      }
+
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && isValidNewBusySlot(request.resource.data);
+      allow delete: if request.auth != null
+                    && getAfter(/databases/$(database)/documents/businesses/$(businessId)/appointments/$(resource.data.appointmentId)).data.status != 'scheduled';
+    }
+
+    match /businesses/{businessId}/appointments/{appointmentId} {
+      function docAt(path) {
+        return get(path).data;
+      }
+
+      function isValidNewAppointment(data) {
+        let business = docAt(/databases/$(database)/documents/businesses/$(businessId));
+        let professional = docAt(/databases/$(database)/documents/businesses/$(businessId)/professionals/$(data.professionalId));
+        let offeredService = docAt(/databases/$(database)/documents/businesses/$(businessId)/services/$(data.serviceId));
+        let customer = docAt(/databases/$(database)/documents/customers/$(request.auth.uid));
+        let account = docAt(/databases/$(database)/documents/users/$(request.auth.uid));
+        let required = ['businessId', 'customerId', 'professionalId', 'serviceId', 'businessName',
+                        'professionalName', 'customerName', 'serviceName', 'durationMinutes',
+                        'start', 'end', 'status'];
+
+        return account.type == 'customer'
+          && data.keys().hasAll(required)
+          && data.keys().hasOnly(required.concat(['note']))
+          && (!('note' in data) || (data.note is string && data.note.size() <= 500))
+          && data.businessId == businessId
+          && data.customerId == request.auth.uid
+          && data.status == 'scheduled'
+          && data.start is timestamp
+          && data.start > request.time
+          && business.active == true
+          && professional.active == true
+          && offeredService.active == true
+          && data.serviceId in professional.serviceIds
+          && data.durationMinutes == offeredService.durationMinutes
+          && data.end == data.start + duration.value(data.durationMinutes, 'm')
+          && data.businessName == business.name
+          && data.professionalName == professional.name
+          && data.serviceName == offeredService.name
+          && data.customerName == customer.name
+          && existsAfter(/databases/$(database)/documents/businesses/$(businessId)/professionals/$(data.professionalId)/busySlots/$(string(data.start.toMillis())));
+      }
+
+      function busySlotPath(data) {
+        return /databases/$(database)/documents/businesses/$(businessId)/professionals/$(data.professionalId)/busySlots/$(string(data.start.toMillis()));
+      }
+
+      function isStatusChange(allowed) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && resource.data.status == 'scheduled'
+          && request.resource.data.status in allowed
+          && !existsAfter(busySlotPath(resource.data));
+      }
+
+      allow create: if request.auth != null && isValidNewAppointment(request.resource.data);
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.customerId
+                    && resource.data.start > request.time
+                    && isStatusChange(['cancelled']);
+
+
+      allow read: if request.auth != null && request.auth.uid == businessId;
+      allow update: if request.auth != null && request.auth.uid == businessId
+                    && isStatusChange(['completed', 'noShow', 'cancelled']);
+
+      allow read: if request.auth != null && request.auth.uid == resource.data.professionalId;
+    }
+
+    match /{path=**}/appointments/{appointmentId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.customerId;
+    }
+  }
+}

@@ -1,17 +1,22 @@
-import { formatTimeLabel } from '../../../shared/lib/date'
+import { useState } from 'react'
+import { formatDateTimeLabel, formatTimeLabel } from '../../../shared/lib/date'
 import { ScheduleView } from '../../../shared/ui/ScheduleView'
 import { Button } from '../../../shared/ui/Button'
 import { Card } from '../../../shared/ui/Card'
+import { useConfirm } from '../../../shared/ui/useConfirm'
 import { useCurrentBusinessId } from '../../businesses/hooks/useCurrentBusinessId'
 import { useBusinessSchedule } from '../hooks/useBusinessSchedule'
 import type { Appointment, AppointmentStatus } from '../types'
+import { statusLabels } from './statusLabels'
 
-const statusLabels: Record<AppointmentStatus, string> = {
-  scheduled: 'Agendado',
-  completed: 'Realizado',
-  cancelled: 'Cancelado',
-  noShow: 'Falta',
+type FinalStatus = Exclude<AppointmentStatus, 'scheduled'>
+
+const statusConfirmations: Record<FinalStatus, { title: string; confirmLabel: string }> = {
+  completed: { title: 'Registrar como realizado?', confirmLabel: 'Registrar realizado' },
+  noShow: { title: 'Registrar falta do cliente?', confirmLabel: 'Registrar falta' },
+  cancelled: { title: 'Cancelar este agendamento?', confirmLabel: 'Cancelar agendamento' },
 }
+
 
 function AppointmentLine({ appointment }: { appointment: Appointment }) {
   return (
@@ -35,11 +40,47 @@ export function BusinessScheduleScreen() {
     goToNext,
     openDay,
     updateStatus,
+    updatingId,
+    updateError,
   } = useBusinessSchedule(businessId)
+  const { confirm, dialog } = useConfirm()
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function handleStatus(appointment: Appointment, status: FinalStatus) {
+    const { title, confirmLabel } = statusConfirmations[status]
+    const confirmed = await confirm({
+      title,
+      description: (
+        <>
+          <p>
+            {appointment.customerName} · {appointment.serviceName} com{' '}
+            {appointment.professionalName}
+          </p>
+          <p>{formatDateTimeLabel(new Date(appointment.start))}</p>
+          <p className="mt-2">Depois de registrado, o status não pode ser alterado.</p>
+        </>
+      ),
+      confirmLabel,
+      tone: status === 'completed' ? 'primary' : 'danger',
+    })
+    if (confirmed) {
+      setMessage(null)
+      if (await updateStatus(appointment.id, status)) {
+        setMessage(
+          `${appointment.customerName} às ${formatTimeLabel(new Date(appointment.start))}: ` +
+            `registrado como ${statusLabels[status]}`,
+        )
+      }
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="text-xl font-semibold text-neutral-900">Agenda</h1>
+      {dialog}
+
+      {message && <p className="mt-2 text-sm text-primary-700">{message}</p>}
+      {updateError && <p className="mt-2 text-sm text-red-600">{updateError}</p>}
 
       <ScheduleView
         loading={loading}
@@ -76,25 +117,31 @@ export function BusinessScheduleScreen() {
                 </div>
 
                 {appointment.status === 'scheduled' && (
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Button
                       variant="secondary"
-                      onClick={() => updateStatus(appointment.id, 'completed')}
+                      disabled={updatingId !== null}
+                      onClick={() => handleStatus(appointment, 'completed')}
                     >
                       Realizado
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => updateStatus(appointment.id, 'noShow')}
+                      disabled={updatingId !== null}
+                      onClick={() => handleStatus(appointment, 'noShow')}
                     >
                       Falta
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => updateStatus(appointment.id, 'cancelled')}
+                      disabled={updatingId !== null}
+                      onClick={() => handleStatus(appointment, 'cancelled')}
                     >
                       Cancelar
                     </Button>
+                    {updatingId === appointment.id && (
+                      <span className="text-sm text-neutral-500">Salvando…</span>
+                    )}
                   </div>
                 )}
               </Card>

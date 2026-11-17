@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { addDays, startOfDay } from '../../../shared/lib/date'
+import {
+  listAppointmentsForBusiness,
+  listTimeOffForProfessional,
+} from '../../appointments/services/appointmentService'
 import type { Appointment, TimeOff } from '../../appointments/types'
 import { listProfessionalsByBusiness } from '../../professionals/services/professionalService'
 import type { Professional } from '../../professionals/types'
 import { computeProductivity, type ProductivityMetrics } from '../domain/metrics'
-import { listAppointmentsForBusiness, listTimeOffForBusiness } from '../services/productivityService'
 
 export type PeriodOption = 7 | 30
 
@@ -18,39 +21,71 @@ export function useProductivity(businessId: string) {
   const [timeOff, setTimeOff] = useState<TimeOff[]>([])
   const [loading, setLoading] = useState(true)
   const [periodDays, setPeriodDays] = useState<PeriodOption>(30)
+  const [error, setError] = useState<string | null>(null)
+
+  const periodEnd = startOfDay(new Date()).getTime()
+  const periodStart = addDays(new Date(periodEnd), -periodDays).getTime()
 
   useEffect(() => {
-    listProfessionalsByBusiness(businessId).then(async (professionalsResult) => {
+    if (!businessId) {
+      return
+    }
+    let ignore = false
+
+    async function load() {
+      const professionalsResult = await listProfessionalsByBusiness(businessId)
       const [appointmentsResult, timeOffResult] = await Promise.all([
-        listAppointmentsForBusiness(businessId),
-        listTimeOffForBusiness(professionalsResult.map((professional) => professional.id)),
+        listAppointmentsForBusiness(
+          businessId,
+          new Date(periodStart),
+          addDays(new Date(periodEnd), 1),
+          'completed',
+        ),
+        Promise.all(
+          professionalsResult.map((professional) =>
+            listTimeOffForProfessional(businessId, professional.id),
+          ),
+        ).then((lists) => lists.flat()),
       ])
 
-      setProfessionals(professionalsResult)
-      setAppointments(appointmentsResult)
-      setTimeOff(timeOffResult)
-      setLoading(false)
+      if (!ignore) {
+        setError(null)
+        setProfessionals(professionalsResult)
+        setAppointments(appointmentsResult)
+        setTimeOff(timeOffResult)
+        setLoading(false)
+      }
+    }
+
+    load().catch((loadError) => {
+      console.error(loadError)
+      if (!ignore) {
+        setError('Não foi possível carregar a produtividade')
+        setLoading(false)
+      }
     })
-  }, [businessId])
+    return () => {
+      ignore = true
+    }
+  }, [businessId, periodStart, periodEnd])
 
-  const metrics = useMemo<ProfessionalMetrics[]>(() => {
-    const periodEnd = startOfDay(new Date())
-    const periodStart = addDays(periodEnd, -periodDays)
+  const metrics = useMemo<ProfessionalMetrics[]>(
+    () =>
+      professionals
+        .map((professional) => ({
+          professional,
+          ...computeProductivity({
+            professionalId: professional.id,
+            shifts: professional.shifts,
+            timeOff,
+            appointments,
+            periodStart: new Date(periodStart),
+            periodEnd: new Date(periodEnd),
+          }),
+        }))
+        .sort((a, b) => b.occupancyRate - a.occupancyRate),
+    [professionals, appointments, timeOff, periodStart, periodEnd],
+  )
 
-    return professionals
-      .map((professional) => ({
-        professional,
-        ...computeProductivity({
-          professionalId: professional.id,
-          shifts: professional.shifts,
-          timeOff,
-          appointments,
-          periodStart,
-          periodEnd,
-        }),
-      }))
-      .sort((a, b) => b.occupancyRate - a.occupancyRate)
-  }, [professionals, appointments, timeOff, periodDays])
-
-  return { metrics, loading, periodDays, setPeriodDays }
+  return { metrics, loading, error, periodDays, setPeriodDays }
 }

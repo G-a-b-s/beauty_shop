@@ -25,8 +25,9 @@ Só cliente. Mostra apenas agendamentos cujo `customerId` é o da conta logada.
 
 ## Dado mockado
 
-Reaproveita o mock de `Appointment` do `feat_prot03`. Como o `uid` do cliente logado só é
-conhecido em tempo de execução (a autenticação já é real desde a Etapa 2), o mock **semeia**
+Reaproveita o mock de `Appointment` do `feat_prot03`. Como uma conta de cliente pode ser criada
+durante a demonstração (cadastro mockado, [ADR 0009](../../adr/0009-autenticacao-mockada-no-prototipo.md)),
+o id do cliente logado só é conhecido em tempo de execução. Por isso o mock **semeia**
 agendamentos para o `customerId` da conta logada na primeira leitura — um de cada status
 (`scheduled`, `completed`, `cancelled`, `noShow`), para as duas seções da tela terem conteúdo.
 

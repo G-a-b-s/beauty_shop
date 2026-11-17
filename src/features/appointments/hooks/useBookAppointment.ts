@@ -1,5 +1,15 @@
+import { FirebaseError } from 'firebase/app'
 import { useEffect, useMemo, useState } from 'react'
-import { addDays, startOfDay } from '../../../shared/lib/date'
+import { toFriendlyError } from '../../../shared/lib/firebaseErrors'
+import {
+  addDays,
+  addMonths,
+  getMonthGrid,
+  isSameMonth,
+  startOfDay,
+  startOfMonth,
+  toDateKey,
+} from '../../../shared/lib/date'
 import {
   listProfessionalsForBusiness,
   listServicesForBusiness,
@@ -7,15 +17,16 @@ import {
 import type { Professional } from '../../professionals/types'
 import type { Service } from '../../services-catalog/types'
 import { getAvailableSlots, type TimeSlot } from '../domain/availability'
+import type { TimeRange } from '../domain/conflict'
 import {
   createAppointment,
-  listAppointmentsForProfessional,
+  listBusySlotsForProfessional,
   listShiftsForProfessional,
   listTimeOffForProfessional,
 } from '../services/appointmentService'
-import type { Appointment, Shift, TimeOff } from '../types'
+import type { Shift, TimeOff } from '../types'
 
-const DAYS_AHEAD = 14
+const BOOKING_WINDOW_DAYS = 60
 
 export function useBookAppointment(
   businessId: string | undefined,
@@ -30,10 +41,12 @@ export function useBookAppointment(
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()))
 
   const [shifts, setShifts] = useState<Shift[]>([])
   const [timeOff, setTimeOff] = useState<TimeOff[]>([])
-  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [busySlots, setBusySlots] = useState<TimeRange[]>([])
+  const [scheduleLoadedFor, setScheduleLoadedFor] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -46,21 +59,24 @@ export function useBookAppointment(
     })
   }, [businessId])
 
+  const [scheduleVersion, setScheduleVersion] = useState(0)
+
   useEffect(() => {
-    if (!selectedProfessionalId) {
+    if (!businessId || !selectedProfessionalId) {
       return
     }
 
     Promise.all([
-      listShiftsForProfessional(selectedProfessionalId),
-      listTimeOffForProfessional(selectedProfessionalId),
-      listAppointmentsForProfessional(selectedProfessionalId),
-    ]).then(([shiftsResult, timeOffResult, appointmentsResult]) => {
+      listShiftsForProfessional(businessId, selectedProfessionalId),
+      listTimeOffForProfessional(businessId, selectedProfessionalId),
+      listBusySlotsForProfessional(businessId, selectedProfessionalId),
+    ]).then(([shiftsResult, timeOffResult, busySlotsResult]) => {
       setShifts(shiftsResult)
       setTimeOff(timeOffResult)
-      setAppointments(appointmentsResult)
+      setBusySlots(busySlotsResult)
+      setScheduleLoadedFor(selectedProfessionalId)
     })
-  }, [selectedProfessionalId])
+  }, [businessId, selectedProfessionalId, scheduleVersion])
 
   const selectedService = services.find((service) => service.id === selectedServiceId) ?? null
   const selectedProfessional =
@@ -75,26 +91,50 @@ export function useBookAppointment(
     )
   }, [professionals, selectedServiceId])
 
-  const availableDates = useMemo(() => {
-    const today = startOfDay(new Date())
-    return Array.from({ length: DAYS_AHEAD }, (_, index) => addDays(today, index))
-  }, [])
+  const firstBookableDay = startOfDay(new Date())
+  const lastBookableDay = addDays(firstBookableDay, BOOKING_WINDOW_DAYS - 1)
+  const scheduleReady =
+    selectedProfessionalId !== null && scheduleLoadedFor === selectedProfessionalId
 
-  const availableSlots = useMemo(() => {
-    if (!selectedProfessionalId || !selectedService || !selectedDate) {
+  function slotsFor(date: Date): TimeSlot[] {
+    if (!scheduleReady || !selectedProfessionalId || !selectedService) {
       return []
     }
-
     return getAvailableSlots({
-      date: selectedDate,
+      date,
       professionalId: selectedProfessionalId,
       durationMinutes: selectedService.durationMinutes,
       shifts,
       timeOff,
-      appointments,
+      busySlots,
       now: new Date(),
     })
-  }, [selectedProfessionalId, selectedService, selectedDate, shifts, timeOff, appointments])
+  }
+
+  const bookableDays = new Set(
+    getMonthGrid(visibleMonth)
+      .filter((day) => isSameMonth(day, visibleMonth))
+      .filter((day) => day >= firstBookableDay && day <= lastBookableDay)
+      .filter((day) => slotsFor(day).length > 0)
+      .map(toDateKey),
+  )
+
+  const availableSlots = selectedDate ? slotsFor(selectedDate) : []
+
+  const canGoToPreviousMonth = visibleMonth > startOfMonth(firstBookableDay)
+  const canGoToNextMonth = addMonths(visibleMonth, 1) <= lastBookableDay
+
+  function isDateBookable(date: Date): boolean {
+    return bookableDays.has(toDateKey(date))
+  }
+
+  function goToPreviousMonth() {
+    setVisibleMonth((current) => addMonths(current, -1))
+  }
+
+  function goToNextMonth() {
+    setVisibleMonth((current) => addMonths(current, 1))
+  }
 
   function selectService(serviceId: string) {
     setSelectedServiceId(serviceId)
@@ -119,15 +159,26 @@ export function useBookAppointment(
       return false
     }
 
-    await createAppointment({
-      businessId,
-      customerId,
-      customerName,
-      professionalId: selectedProfessionalId,
-      serviceId: selectedServiceId,
-      start: selectedSlot.start,
-      end: selectedSlot.end,
-    })
+    try {
+      await createAppointment({
+        businessId,
+        customerId,
+        customerName,
+        professionalId: selectedProfessionalId,
+        serviceId: selectedServiceId,
+        start: selectedSlot.start,
+        end: selectedSlot.end,
+      })
+    } catch (error) {
+      setSelectedSlot(null)
+      setScheduleVersion((version) => version + 1)
+      throw error instanceof FirebaseError && error.code === 'permission-denied'
+        ? new Error(
+            'Não foi possível confirmar: este horário acabou de ser ocupado ou não está mais ' +
+              'disponível. Escolha outro horário.',
+          )
+        : toFriendlyError(error)
+    }
 
     return true
   }
@@ -136,8 +187,13 @@ export function useBookAppointment(
     loading,
     services,
     availableProfessionals,
-    availableDates,
     availableSlots,
+    visibleMonth,
+    canGoToPreviousMonth,
+    canGoToNextMonth,
+    goToPreviousMonth,
+    goToNextMonth,
+    isDateBookable,
     selectedService,
     selectedProfessional,
     selectedDate,

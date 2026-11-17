@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react'
 
-type Variant = 'primary' | 'secondary'
+type Variant = 'primary' | 'secondary' | 'danger'
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant
@@ -14,6 +14,7 @@ const baseStyles =
 const stylesByVariant: Record<Variant, string> = {
   primary: 'bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500',
   secondary: 'bg-primary-50 text-primary-700 hover:bg-primary-100 focus-visible:ring-primary-300',
+  danger: 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500',
 }
 
 export function Button({ variant = 'primary', className = '', ...props }: Props) {

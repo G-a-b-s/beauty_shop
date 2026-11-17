@@ -1,6 +1,6 @@
-import type { Shift } from '../../shared/lib/mockDb'
+import type { Shift } from '../../shared/types/professional'
 
-export type { Professional, Shift, Weekday } from '../../shared/lib/mockDb'
+export type { Professional, Shift, Weekday } from '../../shared/types/professional'
 
 export type NewProfessional = {
   businessId: string

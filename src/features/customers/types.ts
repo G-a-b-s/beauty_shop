@@ -1,4 +1,9 @@
-export type { Customer } from '../../shared/lib/mockDb'
+export type Customer = {
+  id: string
+  name: string
+  phone: string
+  cpf: string
+}
 
 export type CustomerProfileUpdate = {
   name: string
